@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+    <changeSet id="add-file-tables" author="bodeng">
+        <createTable tableName="secure_file_collections">
+            <column name="bucket" type="VARCHAR(50)">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="display_name" type="VARCHAR(60)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_sec_file_coll_display_name"/>
+            </column>
+            <column name="purge_instant" type="DATETIME"/>
+        </createTable>
+        <createTable tableName="secure_files">
+            <column name="id" type="${uuid.type}">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="collection_bucket" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- much bigger and it will exceed MySQL's index size -->
+            <column name="filename" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- 127 chars for each part of a media type, according to RFC4288 -->
+            <column name="content_type" type="VARCHAR(255)"/>
+            <column name="cipher" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="length" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="encrypted_data" type="LONGBLOB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="secure_files" baseColumnNames="collection_bucket"
+                                 constraintName="fk_sec_files_collection_bucket"
+                                 referencedTableName="secure_file_collections" referencedColumnNames="bucket"/>
+        <addUniqueConstraint tableName="secure_files" columnNames="collection_bucket, filename"
+                             constraintName="uq_sec_file_coll_bucket_file"/>
+    </changeSet>
+    <changeSet id="add-notes-to-secure_files" author="bodeng">
+        <addColumn tableName="secure_files">
+            <column name="notes" type="TEXT"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
