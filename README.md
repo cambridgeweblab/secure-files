@@ -161,14 +161,33 @@ Purging
 `domain.AutoPurgeSecureFileCollectionServiceImpl` purges all collections with historic `purgeInstant`s on a daily basis
 (4am each day). This frequency may be configured using the ``files.purge.cron`` application property.
 
+Spring Boot Integration
+-----------------------
+
+Files is delivered as a standalone module with dependencies declared as optional so they are not included as transitive
+dependencies by Maven and can be omitted if you are not using the associated module features. The key dependencies are:
+
+Dependency              | Required by
+------------------------|----------------------------------------
+spring-data-jpa         | JPA domain implementation
+spring-data-mongodb     | MongoDB domain implementation
+hibernate-jpamodelgen   | JPA domain implementation
+spring-webmvc           | Web API
+spring-security-core    | Web API
+spring-hateoas          | Web API
+jackson-datatype-jsr310 | Web API
+commons-beanutils       | Web API
+
+If you include the `weblab-spring-boot-starter` module then Files will be auto-configured. The auto-configuration
+classes are listed in the `META-INF/spring.factories` file. The module detects whether JPA or MongoDB are configured by
+Spring Boot already, and provides the appropriate implementation accordingly. If both JPA and MongoDB are available,
+then which one is used can be controlled by setting one of the properties `spring.data.jpa.repositories.enabled` or
+`spring.data.mongodb.repositories.enabled` to `false`.
+
 Configuration
 -------------
-The module is auto-configured by Spring Boot. The auto-configuration classes are listed in the `META-INF/spring.factories` file.
-The module detects whether JPA or MongoDB are configured by Spring Boot already, and provides the appropriate implementation
-accordingly. If both JPA and MongoDB are available, then which one is used can be controlled by setting one of the properties
-`spring.data.jpa.repositories.enabled` or `spring.data.mongodb.repositories.enabled` to `false`.
 
-* A Liquibase change log `/db/changelog/db.changelog-files.xml` is provided which can be included into the master changelog.
+* A Liquibase change log `/db/changelog/db.changelog-files.xml` is provided which can be included into the master changelog if required.
 * Jackson should be set to serialize dates as ISO with the application property:
 ```
     spring.jackson.serialization.write_dates_as_timestamps=false
