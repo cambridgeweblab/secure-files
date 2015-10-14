@@ -38,7 +38,7 @@ public class DownloadControllerTest {
     public void testDownloadCacheWorks() {
         byte[] content = new byte[] { 1, 5, 3, 8, 1, 7, 3, 9, 4, 6, 7 };
         MediaType contentType = MediaType.IMAGE_GIF;
-        String filename = "nonsense.gif";
+        String filename = "nonsense picture.gif";
 
         final URI uri = downloadController.generateDownload(filename, contentType, content);
         assertTrue("The URI should be set", uri.toString().startsWith("http://localhost/downloads/"));
@@ -51,5 +51,6 @@ public class DownloadControllerTest {
         assertEquals("Expect content type returned", contentType, response.getHeaders().getContentType());
         assertEquals("Expect content length returned", (long) content.length, response.getHeaders().getContentLength());
         assertThat("Expect filename return", response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION), contains(containsString(filename)));
+        assertThat("Expect filename to be quoted", response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION), contains(containsString('"' + filename + '"')));
     }
 }

@@ -122,7 +122,7 @@ public class DownloadController {
         headers.setCacheControl("private, max-age=300"); // The important thing is to avoid no-cache and no-store, for IE.
         headers.setContentType(pendingDownload.getContentType());
         headers.setContentLength(pendingDownload.getContent().length);
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + pendingDownload.getFilename());
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pendingDownload.getFilename() + '"');
         headers.setLocation(linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri());
         return new ResponseEntity<>(pendingDownload.getContent(), headers, HttpStatus.OK);
     }
