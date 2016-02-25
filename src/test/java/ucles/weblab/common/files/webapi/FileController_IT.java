@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.webapi;
 
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.io.Resources;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.Test;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import javax.transaction.Transactional;
+import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.is;
@@ -82,7 +84,7 @@ public class FileController_IT extends AbstractRestController_IT {
     @Configuration
     @EnableJpaRepositories(basePackageClasses = {SecureFileCollectionRepositoryJpa.class})
     @EntityScan(basePackageClasses = {SecureFileEntityJpa.class, Jsr310JpaConverters.class})
-    @ComponentScan(basePackageClasses = {FileController.class})
+    @ComponentScan(basePackageClasses = {FileController.class, DownloadController.class})
     @Import({ConfigurableEntitySupport.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, FilesConverters.class, FilesBuilders.class})
     @EnableAutoConfiguration
     public static class Config {
@@ -110,6 +112,12 @@ public class FileController_IT extends AbstractRestController_IT {
         MultipartResolver multipartResolver() {
             return new JerseyMultipartResolver();
         }
+        
+        @Bean
+        FileDownloadCache fileDownloadCache() {
+            return new FileDownloadCacheInMemory();
+        }
+
     }
 
     @Test

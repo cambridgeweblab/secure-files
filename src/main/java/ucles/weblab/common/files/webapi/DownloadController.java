@@ -1,14 +1,13 @@
 package ucles.weblab.common.files.webapi;
 
+import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,12 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import ucles.weblab.common.blob.api.BlobStoreResult;
+import ucles.weblab.common.files.domain.SecureFileEntity;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
@@ -37,84 +35,50 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 public class DownloadController {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private Clock clock = Clock.systemUTC();
-    private Duration cacheExpiry;
-    private final ConcurrentHashMap<UUID, PendingDownload> recentDownloadCache = new ConcurrentHashMap<>();
-
-    static class PendingDownload {
-        final MediaType contentType;
-        final String filename;
-        final byte[] content;
-        final Instant purgeTime;
-
-        PendingDownload(MediaType contentType, String filename, byte[] content, Instant purgeTime) {
-            this.contentType = contentType;
-            this.content = content;
-            this.filename = filename;
-            this.purgeTime = purgeTime;
-        }
-
-        MediaType getContentType() {
-            return contentType;
-        }
-
-        String getFilename() {
-            return filename;
-        }
-
-        byte[] getContent() {
-            return content;
-        }
-
-        Instant getPurgeTime() {
-            return purgeTime;
-        }
-    }
-
-    @Autowired(required = false) // will fall back to default system UTC clock
-    public void configureClock(Clock clock) {
-        log.warn("Clock overridden with " + clock);
-        this.clock = clock;
-    }
-
+    private FileDownloadCache<UUID, PendingDownload> recentDownloadCache;
+    
     @Autowired
-    void configureCacheExpiry(@Value("${files.download.cache.expirySeconds:30}") int cacheExpirySeconds) {
-        log.info("Cache expiry set to " + cacheExpirySeconds + "s");
-        this.cacheExpiry = Duration.ofSeconds(cacheExpirySeconds);
+    public DownloadController(FileDownloadCache recentDownloadCache) {
+        this.recentDownloadCache = recentDownloadCache;
     }
-
-    /**
-     * Scheduled job to clean up the cache every 15 minutes.
-     */
-    @Scheduled(fixedRate = 15 * 60 * 1000)
-    public void cleanCache() {
-        final Iterator<Map.Entry<UUID, PendingDownload>> cacheEntries = recentDownloadCache.entrySet().iterator();
-        while (cacheEntries.hasNext()) {
-            Map.Entry<UUID, PendingDownload> cacheEntry =  cacheEntries.next();
-            if (cacheEntry.getValue().getPurgeTime().isBefore(Instant.now(clock))) {
-                cacheEntries.remove();
-            }
-        }
-    }
-
+    
     /**
      * This method is used by other controllers to generate downloads ready to be fetched by the browser.
      *
-     * @param filename the filename for the download
-     * @param contentType the content type of the download
-     * @param content the download binary content
+     * @param collectionName
+     * @param secureFile
      * @return a time-limited URI for unauthenticated access to the download
      */
-    public URI generateDownload(String filename, MediaType contentType, byte[] content) {
+    public URI generateDownload(String collectionName, SecureFileEntity secureFile) {
         UUID downloadId = UUID.randomUUID();
-        recentDownloadCache.put(downloadId, new PendingDownload(contentType, filename, content, Instant.now(clock).plus(cacheExpiry)));
-
-        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri();
+        Instant purgeTime = Instant.now(clock).plus(this.recentDownloadCache.getExpiry());
+        
+        //ask the cache if it's there
+        Optional<PendingDownload> cacheEntry = recentDownloadCache.get(downloadId, collectionName, secureFile);
+        String url;
+        
+        if (cacheEntry.isPresent()) {
+            url = cacheEntry.get().getUrl();
+        } else {
+            //add it to the cache instead 
+            PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), secureFile.getFilename(), secureFile.getPlainData(), purgeTime, null);
+            Optional<BlobStoreResult> putResult = recentDownloadCache.put(downloadId, collectionName, pd);
+            Optional<String> urlOpt = recentDownloadCache.getUrl(downloadId, collectionName, pd);
+            
+            url = urlOpt.orElse("");
+        }
+              
+        //get the link from above. 
+        return URI.create(url);
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String id) {
         final UUID downloadId = UUID.fromString(id);
-        PendingDownload pendingDownload = recentDownloadCache.get(downloadId);
+        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, id, null);
+        
+        PendingDownload pendingDownload = pendingDownloadOptional.orElse(null);
+                
         if (pendingDownload == null || pendingDownload.getPurgeTime().isBefore(Instant.now(clock))) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

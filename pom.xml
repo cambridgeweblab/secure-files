@@ -60,6 +60,20 @@
             <artifactId>hibernate-jpamodelgen</artifactId>
             <optional>true</optional>
         </dependency>
+        
+        <!-- AWS -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>1.10.52</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.10.52</version>
+        </dependency>
+        
+        <!--Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
@@ -86,6 +100,8 @@
             <!-- only used for annotations, so if we don't have it at runtime then it doesn't matter -->
             <optional>true</optional>
         </dependency>
+        
+        <!-- Test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
@@ -143,6 +159,8 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>test</scope>
         </dependency>
+        
+
     </dependencies>
 
 </project>

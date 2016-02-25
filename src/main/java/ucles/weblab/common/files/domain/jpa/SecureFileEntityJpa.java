@@ -91,12 +91,12 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
     }
 
     @Autowired
-    void configureEncryptionService(EncryptionService encryptionService) {
+    public void configureEncryptionService(EncryptionService encryptionService) {
         this.encryptionService = encryptionService;
     }
 
     @Autowired
-    void configureDefaultCipher(@Value("${files.security.cipher:AES-GCM}") String cipherName) {
+    public void configureDefaultCipher(@Value("${files.security.cipher:AES-GCM}") String cipherName) {
         this.defaultCipherName = cipherName;
     }
 

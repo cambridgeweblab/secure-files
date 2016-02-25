@@ -33,9 +33,21 @@ import ucles.weblab.common.files.webapi.resource.FileCollectionResource;
 import ucles.weblab.common.files.webapi.resource.FileMetadataResource;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ucles.weblab.common.blob.api.Blob;
+import ucles.weblab.common.blob.api.BlobId;
+import ucles.weblab.common.blob.api.BlobNotFoundException;
+import ucles.weblab.common.blob.api.BlobStoreException;
+import ucles.weblab.common.blob.api.BlobStoreResult;
+import ucles.weblab.common.blob.api.BlobStoreService;
+import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -52,6 +64,9 @@ import static ucles.weblab.common.webapi.MoreMediaTypes.APPLICATION_JSON_UTF8_VA
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
+    
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    
     private final FilesFactory filesFactory;
     private final SecureFileCollectionRepository secureFileCollectionRepository;
     private final SecureFileRepository secureFileRepository;
@@ -60,7 +75,8 @@ public class FileController {
     private final DownloadController downloadController;
     private final Supplier<SecureFileCollection.Builder> secureFileCollectionBuilder;
     private final Supplier<SecureFile.Builder> secureFileBuilder;
-
+    private final FileDownloadCache<UUID, PendingDownload> downloadCache;
+    
     private static class DecryptionFailedException extends NestedRuntimeException {
         public DecryptionFailedException(Exception e) {
             super("Failed to decrypt file data", e);
@@ -68,10 +84,15 @@ public class FileController {
     }
 
     @Autowired
-    public FileController(FilesFactory filesFactory, SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository,
+    public FileController(FilesFactory filesFactory, 
+                          SecureFileCollectionRepository secureFileCollectionRepository, 
+                          SecureFileRepository secureFileRepository,
                           FileMetadataResourceAssembler fileMetadataResourceAssembler,
-                          FileCollectionResourceAssembler fileCollectionResourceAssembler, DownloadController downloadController,
-                          Supplier<SecureFileCollection.Builder> secureFileCollectionBuilder, Supplier<SecureFile.Builder> secureFileBuilder) {
+                          FileCollectionResourceAssembler fileCollectionResourceAssembler, 
+                          DownloadController downloadController,
+                          Supplier<SecureFileCollection.Builder> secureFileCollectionBuilder, 
+                          Supplier<SecureFile.Builder> secureFileBuilder,
+                          FileDownloadCache<UUID, PendingDownload> downloadCache) {
         this.filesFactory = filesFactory;
         this.secureFileCollectionRepository = secureFileCollectionRepository;
         this.secureFileRepository = secureFileRepository;
@@ -80,6 +101,7 @@ public class FileController {
         this.downloadController = downloadController;
         this.secureFileCollectionBuilder = secureFileCollectionBuilder;
         this.secureFileBuilder = secureFileBuilder;
+        this.downloadCache = downloadCache;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = APPLICATION_JSON_UTF8_VALUE)
@@ -184,9 +206,9 @@ public class FileController {
         }
         final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
         return found.map((secureFile) -> {
-            try {
+            try {                        
                 HttpHeaders headers = new HttpHeaders();
-                headers.setLocation(downloadController.generateDownload(secureFile.getFilename(), MediaType.valueOf(secureFile.getContentType()), secureFile.getPlainData()));
+                headers.setLocation(downloadController.generateDownload(bucket, secureFile));
                 final ResourceSupport resource = new ResourceSupport();
                 resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
                 return new ResponseEntity<>(resource, headers, HttpStatus.SEE_OTHER);
@@ -204,19 +226,29 @@ public class FileController {
         if (collection == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
-        return found.map((secureFile) -> {
-            try {
-                HttpHeaders headers = new HttpHeaders();
-                headers.setLocation(downloadController.generateDownload(secureFile.getFilename(), MediaType.valueOf(secureFile.getContentType()), secureFile.getPlainData()));
-                final ResourceSupport resource = new ResourceSupport();
-                resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
-                return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
-            } catch (TransientDataAccessResourceException e) {
-                throw new DecryptionFailedException(e);
+        
+        Optional<String> recentUrl = downloadCache.getRecentUrl(bucket, filename);
+        final URI location;
+        if (recentUrl.isPresent()) {
+            location = URI.create(recentUrl.get());
+        } else {
+            final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
+            if (found.isPresent()) {
+                location = downloadController.generateDownload(bucket, found.get());            
             }
-        }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+            
+            //its not in the cache nor the repository
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+                
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(location);
+        final ResourceSupport resource = new ResourceSupport();
+        resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
+        return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
+
     }
+    
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<FileMetadataResource> uploadFileToBucket(@RequestParam String collection, @RequestParam(required = false) String notes, @RequestParam MultipartFile file) throws IOException {
