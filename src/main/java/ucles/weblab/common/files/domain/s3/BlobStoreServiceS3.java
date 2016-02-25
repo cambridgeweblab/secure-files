@@ -53,6 +53,8 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     /*The root path that lives under the bucket name, can be slash seperated representing a file structure*/
     private final String rootPath;
     
+    private final String s3Region;
+    
     /**
      * 
      * @param awsCredentials
@@ -77,7 +79,8 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                 new AmazonS3Client(new DefaultAWSCredentialsProviderChain(), new WeblabClientConfiguration(true, 5));
         
         this.rootPath = rootPath;
-
+        this.s3Region = s3region;
+        
         String bucketPolicyText = "{\"Version\":\"2016-02-24\", \"Statement\":[{\"Sid\":\"AddPerm\",\"Effect\":\"Allow\",\"Principal\": \"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::" + bucketName + "/*\"]}]}";
         log.info("Using the policy for: " + bucketPolicyText);
         //bucket names must be globally unique
@@ -285,8 +288,8 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     public Optional<URI> getUrl(BlobId blobId) throws BlobStoreException, BlobNotFoundException {
         
         try {
-            //links are always http://s3.amazonaws.com/Bucket/Object
-            String url = "http://s3.amazon.com/"+ bucketName + "/" + blobId.getId();
+            //links are always /https://s3-eu-west-1.amazonaws.com/bucketname/rootpath/filename
+            String url = "http://s3" + "-" + this.s3Region + ".amazonaws.com/"+ bucketName + "/" + rootPath + "/" + blobId.getId();
             log.info("Creating url with: " + url);
             URI uri = new URI(url);
             return Optional.of(uri);
@@ -308,5 +311,12 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         }
         
         return rootPath + "/" + id.getId();
+    }
+
+    @Override
+    public boolean exists(BlobId blobId) {
+
+        boolean doesObjectExist = s3.doesObjectExist(bucketName, blobId.getId());
+        return doesObjectExist;
     }
 }

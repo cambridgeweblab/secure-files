@@ -40,4 +40,6 @@ public interface BlobStoreService {
     public void renameBlob(BlobId oldBlob, BlobId newBlob) throws BlobStoreException, BlobNotFoundException ;
 
     public Optional<URI> getUrl(BlobId blobId) throws BlobStoreException, BlobNotFoundException;
+    
+    public boolean exists(BlobId blobId);
 }

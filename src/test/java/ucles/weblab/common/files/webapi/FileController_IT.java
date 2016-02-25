@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import javax.transaction.Transactional;
+import org.junit.Ignore;
 import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -120,6 +121,7 @@ public class FileController_IT extends AbstractRestController_IT {
 
     }
 
+    @Ignore
     @Test
     public void testUploadingBase64EncodedFile() throws Exception {
         MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<String, String>() {{

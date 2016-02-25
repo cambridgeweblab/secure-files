@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.RequestParam;
 import ucles.weblab.common.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFileEntity;
 
@@ -52,27 +53,25 @@ public class DownloadController {
     public URI generateDownload(String collectionName, SecureFileEntity secureFile) {
         UUID downloadId = UUID.randomUUID();
         Instant purgeTime = Instant.now(clock).plus(this.recentDownloadCache.getExpiry());
-        
-        //ask the cache if it's there
-        Optional<PendingDownload> cacheEntry = recentDownloadCache.get(downloadId, collectionName, secureFile);
-        String url;
-        
-        if (cacheEntry.isPresent()) {
-            url = cacheEntry.get().getUrl();
-        } else {
-            //add it to the cache instead 
-            PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), secureFile.getFilename(), secureFile.getPlainData(), purgeTime, null);
-            Optional<BlobStoreResult> putResult = recentDownloadCache.put(downloadId, collectionName, pd);
-            Optional<String> urlOpt = recentDownloadCache.getUrl(downloadId, collectionName, pd);
-            
-            url = urlOpt.orElse("");
-        }
-              
-        //get the link from above. 
-        return URI.create(url);
-    }
+        PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), secureFile.getFilename(), secureFile.getPlainData(), purgeTime, null);
+        Optional<BlobStoreResult> putResult = recentDownloadCache.put(downloadId, collectionName, pd);
+        Optional<String> urlOpt = recentDownloadCache.getUrl(downloadId, collectionName, pd);
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+        String urlToFile = urlOpt.orElse(null);                  
+
+        String fileName = recentDownloadCache.createCacheEntryKey(downloadId, collectionName, secureFile.getFilename());
+        //return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri();
+        URI toUri = linkTo(methodOn(DownloadController.class).redirectToExternalUrl(fileName)).toUri();
+        log.info("Returning after generateDownload: " + toUri);
+        return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(fileName)).toUri();
+
+       /// return returnLink;
+       // return URI.create(urlToFile);
+
+    }
+    
+    @RequestMapping(value = "/{id}", 
+                    method = RequestMethod.GET)
     public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String id) {
         final UUID downloadId = UUID.fromString(id);
         Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, id, null);
@@ -82,12 +81,38 @@ public class DownloadController {
         if (pendingDownload == null || pendingDownload.getPurgeTime().isBefore(Instant.now(clock))) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setCacheControl("private, max-age=300"); // The important thing is to avoid no-cache and no-store, for IE.
-        headers.setContentType(pendingDownload.getContentType());
-        headers.setContentLength(pendingDownload.getContent().length);
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pendingDownload.getFilename() + '"');
-        headers.setLocation(linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri());
+        
+        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri();
+        HttpHeaders headers = getDownloadHeaders(pendingDownload.getFilename(), pendingDownload.getContentType(), pendingDownload.getContent().length, toUri);
         return new ResponseEntity<>(pendingDownload.getContent(), headers, HttpStatus.OK);
     }
+    
+    @RequestMapping(value = "/redirectfile/{fileName}/", 
+                    method = RequestMethod.GET)
+    public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String fileName) {
+        
+        //no length set*******943502
+        HttpHeaders httpHeaders = new HttpHeaders();
+        // The important thing is to avoid no-cache and no-store, for IE.
+        httpHeaders.setCacheControl("private, max-age=300"); 
+        httpHeaders.setContentType(MediaType.valueOf("application/pdf"));
+
+        httpHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
+        httpHeaders.setLocation(URI.create("https://s3-eu-west-1.amazonaws.com/dfd-898089864934/dfd/files/" + fileName));
+                
+        return new ResponseEntity<>(httpHeaders, HttpStatus.OK);
+        
+    }
+    
+    private HttpHeaders getDownloadHeaders(String fileName, MediaType contentType, int length, URI uri) {
+        HttpHeaders headers = new HttpHeaders();
+        // The important thing is to avoid no-cache and no-store, for IE.
+        headers.setCacheControl("private, max-age=300"); 
+        headers.setContentType(contentType);
+        headers.setContentLength(length);
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
+        headers.setLocation(uri);
+        return headers;
+    }
+    
 }

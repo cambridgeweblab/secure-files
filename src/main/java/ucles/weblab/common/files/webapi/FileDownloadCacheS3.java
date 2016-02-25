@@ -27,14 +27,14 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private final ConcurrentHashMap<String, String> recentFileNamesToUrls;        
+    //private final ConcurrentHashMap<String, String> recentFileNamesToUrls;        
     private final BlobStoreService blobStoreService;
     private Clock clock = Clock.systemUTC();
     private Duration cacheExpiry;
     
     public FileDownloadCacheS3(BlobStoreService blobStoreService) {
         this.blobStoreService = blobStoreService;
-        this.recentFileNamesToUrls = new ConcurrentHashMap<>();
+        //this.recentFileNamesToUrls = new ConcurrentHashMap<>();
 
     }
 
@@ -52,13 +52,14 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
      * Check if the item is already in S3.
      * @param id
      * @param collectionName
-     * @param secureFile
+     * @param fileName
      * @return 
      */
     @Override
-    public Optional<PendingDownload> get(UUID id, String collectionName, SecureFile secureFile ) {                
+    public Optional<PendingDownload> get(UUID id, String collectionName, String fileName ) {                
         
-        String fileNameToGet = createCacheEntryKey(id, collectionName, secureFile.getFilename());
+        String fileNameToGet = createCacheEntryKey(id, collectionName, fileName);
+        
         try {
             Optional<Blob> blob = blobStoreService.getBlob(new BlobId(fileNameToGet));
             
@@ -98,18 +99,10 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     
     @Override
     public boolean exists(UUID id, String collectionName, SecureFile secureFile) {
-        //@todo - dont get it from s3 use s3Client.doesObjectExist!!!! 
         
         String fileNameToStore = createCacheEntryKey(id, collectionName, secureFile.getFilename());
-
-        try {
-            Optional<Blob> blob = blobStoreService.getBlob(new BlobId(fileNameToStore));
-            return blob.isPresent();
-        } catch (BlobStoreException | BlobNotFoundException e) {
-            log.warn("Exception thrown when putting into S3 blob with id", e);
-
-        }
-        return false;
+        return blobStoreService.exists(new BlobId(fileNameToStore));
+        
     }
     
     @Override
@@ -119,7 +112,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
             Optional<URI> uri = blobStoreService.getUrl(new BlobId(fileName));
             
             if (uri.isPresent()) {
-                recentFileNamesToUrls.put(collectionName + "_" + pendingDownload.getFilename(), uri.get().toString());
+                //recentFileNamesToUrls.put(collectionName + "_" + pendingDownload.getFilename(), uri.get().toString());
                 return Optional.of(uri.get().toString());
             }
         } catch (BlobStoreException | BlobNotFoundException e) {
@@ -128,7 +121,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         return Optional.empty();
     }
     
-    @Override
+    /*@Override
     public Optional<String> getRecentUrl(String collectionName, String fileName) {
         String res = recentFileNamesToUrls.get(collectionName + "_" + fileName);
         if (res != null) {
@@ -136,7 +129,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         } else {
             return Optional.ofNullable(res);
         }
-    }
+    }*/
     
     @Autowired(required = false) // will fall back to default system UTC clock
     public void configureClock(Clock clock) {

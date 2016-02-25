@@ -54,7 +54,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     }
        
     @Override
-    public Optional<PendingDownload> get(UUID id, String collectionName, SecureFile secureFile) {
+    public Optional<PendingDownload> get(UUID id, String collectionName, String fileName) {
         PendingDownload result = recentDownloadCache.get(id);
         if (result == null) {
             return Optional.empty();
@@ -67,12 +67,12 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     @Override
     public Optional<BlobStoreResult> put(UUID id, String collectionName, PendingDownload pendingDownload) {
         PendingDownload result = recentDownloadCache.put(id, pendingDownload );
-        String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString())).toUri().getPath();
+        //String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString())).toUri().getPath();
         BlobStoreResult blobStoreResult = new BlobStoreResult(new BlobId(id.toString()), 
                                                               pendingDownload.getFilename(), 
                                                               collectionName, 
                                                               pendingDownload.getPurgeTime(), 
-                                                              url);
+                                                              "");
         return Optional.of(blobStoreResult);
     }
     
@@ -101,17 +101,17 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
 
     @Override
     public Optional<String> getUrl(UUID id, String collectionName, PendingDownload pendingDownload) {
-        String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString())).toUri().getPath();
-        return Optional.of(url);
+        //String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString())).toUri().getPath();
+        return Optional.empty();
     }
 
-    @Override
+    /*@Override
     public Optional<String> getRecentUrl(String collectionName, String fileName) {
         
         //always return empty
         return Optional.empty();
         
-    }
+    } */
 
     
 

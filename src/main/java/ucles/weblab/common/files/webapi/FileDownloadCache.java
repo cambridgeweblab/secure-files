@@ -17,7 +17,7 @@ public interface FileDownloadCache<T extends Serializable, PendingDownload> {
     
     void clean();
     
-    Optional<PendingDownload> get(T id, String collectionName, SecureFile secureFile );
+    Optional<PendingDownload> get(T id, String collectionName, String fileName);
     
     Optional<BlobStoreResult> put(T id, String collectionName, PendingDownload pendingDownload);
     
@@ -28,7 +28,7 @@ public interface FileDownloadCache<T extends Serializable, PendingDownload> {
     
     Optional<String> getUrl(T id, String collectionName, PendingDownload pendingDownload);
     
-    Optional<String> getRecentUrl(String collectionName, String fileName);
+    //Optional<String> getRecentUrl(String collectionName, String fileName);
     
     /**
      * 

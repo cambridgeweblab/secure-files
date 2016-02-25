@@ -37,17 +37,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ucles.weblab.common.blob.api.Blob;
-import ucles.weblab.common.blob.api.BlobId;
-import ucles.weblab.common.blob.api.BlobNotFoundException;
-import ucles.weblab.common.blob.api.BlobStoreException;
-import ucles.weblab.common.blob.api.BlobStoreResult;
-import ucles.weblab.common.blob.api.BlobStoreService;
-import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -227,23 +219,27 @@ public class FileController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
-        Optional<String> recentUrl = downloadCache.getRecentUrl(bucket, filename);
-        final URI location;
-        if (recentUrl.isPresent()) {
-            location = URI.create(recentUrl.get());
+        //always create a random id, first time round, it will never exist
+        UUID id = UUID.randomUUID();
+        Optional<PendingDownload> fileOpt = downloadCache.get(id, bucket, filename);
+        final URI location;        
+        if (fileOpt.isPresent()) {
+            PendingDownload get = fileOpt.get();
+            location = URI.create(downloadCache.getUrl(id, filename, get).orElse(null));
         } else {
             final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
             if (found.isPresent()) {
-                location = downloadController.generateDownload(bucket, found.get());            
-            }
-            
-            //its not in the cache nor the repository
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+                location = downloadController.generateDownload(bucket, found.get());  
                 
+            } else {
+                //its not in the cache nor the repository
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }            
+        }
+               
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(location);
-        final ResourceSupport resource = new ResourceSupport();
+        final ResourceSupport resource = new ResourceSupport();        
         resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
         return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
 
