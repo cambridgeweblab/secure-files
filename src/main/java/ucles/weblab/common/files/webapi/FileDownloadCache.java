@@ -1,6 +1,7 @@
 package ucles.weblab.common.files.webapi;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +30,8 @@ public interface FileDownloadCache<T extends Serializable, PendingDownload> {
     Optional<String> getUrl(T id, String collectionName, String fileName);
     
     //Optional<String> getRecentUrl(String collectionName, String fileName);
+    
+    URI getRedirectUrl(UUID id, String collectionName, String fileName);
     
     /**
      * 

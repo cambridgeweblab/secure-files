@@ -19,6 +19,9 @@ import ucles.weblab.common.blob.api.BlobStoreResult;
 import ucles.weblab.common.blob.api.BlobStoreService;
 import ucles.weblab.common.files.domain.SecureFile;
 
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
 /**
  *
  * @author Sukhraj
@@ -141,6 +144,11 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     void configureCacheExpiry(@Value("${files.download.cache.expirySeconds:30}") int cacheExpirySeconds) {
         log.info("Cache expiry set to " + cacheExpirySeconds + "s");
         this.cacheExpiry = Duration.ofSeconds(cacheExpirySeconds);
+    }
+
+    @Override
+    public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
+        return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, fileName, id)).toUri();
     }
     
 }

@@ -1,6 +1,5 @@
 package ucles.weblab.common.files.webapi;
 
-import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
-import org.springframework.web.bind.annotation.RequestParam;
-import ucles.weblab.common.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFileEntity;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
@@ -53,18 +49,25 @@ public class DownloadController {
      * @return a time-limited URI for unauthenticated access to the download
      */
     public URI generateDownload(UUID id, String collectionName, SecureFileEntity secureFile) {
-        //return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri();
-        URI toUri = linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, secureFile.getFilename(), id)).toUri();
-        log.info("Returning after generateDownload: " + toUri);
-        return toUri;
-
+        return recentDownloadCache.getRedirectUrl(id, collectionName, secureFile.getFilename());
     }
     
-    @RequestMapping(value = "/{id}", 
+    /**
+     * This method is responsible for making the browser display a file>save as
+     * dialog box. 
+     * 
+     * @param id
+     * @param fileName
+     * @return 
+     */
+    @RequestMapping(value = "/{id}/{fileName}", 
                     method = RequestMethod.GET)
-    public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String id) {
+    public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String id, @PathVariable String fileName) {
         final UUID downloadId = UUID.fromString(id);
-        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, id, null);
+        
+        
+        
+        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, id, fileName);
         
         PendingDownload pendingDownload = pendingDownloadOptional.orElse(null);
                 
@@ -72,14 +75,23 @@ public class DownloadController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
-        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri();
+        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString(), fileName)).toUri();
         HttpHeaders headers = getDownloadHeaders(pendingDownload.getFilename(), pendingDownload.getContentType(), pendingDownload.getContent().length, toUri);
         return new ResponseEntity<>(pendingDownload.getContent(), headers, HttpStatus.OK);
     }
     
+    /**
+     * This method is responsible for displaying a file (in the browser) of an external file
+     * @param collectionName
+     * @param fileName
+     * @param id
+     * @return 
+     */
     @RequestMapping(value = "/redirectfile/{collectionName}/{fileName}/{id}", 
                     method = RequestMethod.GET)
-    public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String collectionName, @PathVariable String fileName, @PathVariable UUID id) {
+    public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String collectionName, 
+                                                        @PathVariable String fileName, 
+                                                        @PathVariable UUID id) {
         
         Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(id, collectionName, fileName);
         

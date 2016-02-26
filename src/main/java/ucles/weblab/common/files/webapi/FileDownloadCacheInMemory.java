@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.webapi;
 
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,6 +17,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import ucles.weblab.common.blob.api.BlobId;
 import ucles.weblab.common.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFile;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 
 /**
@@ -110,7 +114,10 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
         
     } */
 
-    
+    @Override
+    public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
+        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString(), fileName)).toUri();
+    }
 
     
 
