@@ -87,7 +87,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         String fileNameToStore = createCacheEntryKey(id, collectionName, pendingDownload.getFilename());
                 
         try {
-            Optional<BlobStoreResult> result = blobStoreService.putBlob(new BlobId(fileNameToStore), pendingDownload.getContentType().getType(), pendingDownload.getContent(), pendingDownload.getPurgeTime());
+            Optional<BlobStoreResult> result = blobStoreService.putBlob(new BlobId(fileNameToStore), pendingDownload.getContentType().toString(), pendingDownload.getContent(), pendingDownload.getPurgeTime());
             
             return result;                                       
             
@@ -106,10 +106,10 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     }
     
     @Override
-    public Optional<String> getUrl(UUID id, String collectionName, PendingDownload pendingDownload) {
-        String fileName = createCacheEntryKey(id, collectionName, pendingDownload.getFilename());
+    public Optional<String> getUrl(UUID id, String collectionName, String fileName) {
+        String s3fileName = createCacheEntryKey(id, collectionName, fileName);
         try {
-            Optional<URI> uri = blobStoreService.getUrl(new BlobId(fileName));
+            Optional<URI> uri = blobStoreService.getUrl(new BlobId(s3fileName));
             
             if (uri.isPresent()) {
                 //recentFileNamesToUrls.put(collectionName + "_" + pendingDownload.getFilename(), uri.get().toString());

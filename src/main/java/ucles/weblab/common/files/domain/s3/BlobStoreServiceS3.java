@@ -289,7 +289,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         
         try {
             //links are always /https://s3-eu-west-1.amazonaws.com/bucketname/rootpath/filename
-            String url = "http://s3" + "-" + this.s3Region + ".amazonaws.com/"+ bucketName + "/" + rootPath + "/" + blobId.getId();
+            String url = "https://s3" + "-" + this.s3Region + ".amazonaws.com/"+ bucketName + "/" + rootPath + "/" + blobId.getId();
             log.info("Creating url with: " + url);
             URI uri = new URI(url);
             return Optional.of(uri);

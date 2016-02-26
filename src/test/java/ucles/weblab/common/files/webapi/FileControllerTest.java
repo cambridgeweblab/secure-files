@@ -432,7 +432,7 @@ public class FileControllerTest {
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
-        when(downloadController.generateDownload(eq(filename), any())).thenReturn(downloadUri);
+        when(downloadController.generateDownload(any(), eq(filename), any())).thenReturn(downloadUri);
         final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 201 Created", HttpStatus.CREATED, result.getStatusCode());
         assertEquals("Should return a Location", result.getHeaders().getLocation(), downloadUri);
@@ -448,7 +448,7 @@ public class FileControllerTest {
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(null);
         final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
-        verify(downloadController, never()).generateDownload(anyString(), any());
+        verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
 
     @Test
@@ -460,7 +460,7 @@ public class FileControllerTest {
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn(Optional.empty());
         final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
-        verify(downloadController, never()).generateDownload(anyString(), any());
+        verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
 
     private static SecureFileEntity mockSecureFile(MockMultipartFile file) {

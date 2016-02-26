@@ -14,22 +14,16 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.Ignore;
-import org.mockito.Mock;
 import org.springframework.mock.web.MockMultipartFile;
-import ucles.weblab.common.files.domain.EncryptionService;
 import ucles.weblab.common.files.domain.SecureFile;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.common.files.domain.SecureFileEntity;
-import ucles.weblab.common.files.domain.jpa.SecureFileCollectionEntityJpa;
-import ucles.weblab.common.files.domain.jpa.SecureFileEntityJpa;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static ucles.weblab.common.test.webapi.WebTestSupport.setUpRequestContext;
@@ -63,7 +57,7 @@ public class DownloadControllerTest {
         SecureFileEntity secureFileEntity = mockSecureFile(filename);
         
                         
-        final URI uri = downloadController.generateDownload(filename, secureFileEntity);
+        final URI uri = downloadController.generateDownload(UUID.randomUUID(), filename, secureFileEntity);
         //assertTrue("The URI should be set", uri.toString().startsWith("http://localhost/downloads/"));
         final UUID uuid = UUID.fromString(uri.toString().substring(11));
         final ResponseEntity<byte[]> response = downloadController.fetchPreviouslyGeneratedDownload(uuid.toString());

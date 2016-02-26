@@ -26,7 +26,7 @@ public interface FileDownloadCache<T extends Serializable, PendingDownload> {
     //why do we need this?????!!!! it does a get anyway on the cache. 
     boolean exists(T id, String collectionName, SecureFile secureFile);
     
-    Optional<String> getUrl(T id, String collectionName, PendingDownload pendingDownload);
+    Optional<String> getUrl(T id, String collectionName, String fileName);
     
     //Optional<String> getRecentUrl(String collectionName, String fileName);
     

@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.web.bind.annotation.RequestParam;
 import ucles.weblab.common.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFileEntity;
@@ -46,27 +47,16 @@ public class DownloadController {
     /**
      * This method is used by other controllers to generate downloads ready to be fetched by the browser.
      *
+     * @param id
      * @param collectionName
      * @param secureFile
      * @return a time-limited URI for unauthenticated access to the download
      */
-    public URI generateDownload(String collectionName, SecureFileEntity secureFile) {
-        UUID downloadId = UUID.randomUUID();
-        Instant purgeTime = Instant.now(clock).plus(this.recentDownloadCache.getExpiry());
-        PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), secureFile.getFilename(), secureFile.getPlainData(), purgeTime, null);
-        Optional<BlobStoreResult> putResult = recentDownloadCache.put(downloadId, collectionName, pd);
-        Optional<String> urlOpt = recentDownloadCache.getUrl(downloadId, collectionName, pd);
-
-        String urlToFile = urlOpt.orElse(null);                  
-
-        String fileName = recentDownloadCache.createCacheEntryKey(downloadId, collectionName, secureFile.getFilename());
+    public URI generateDownload(UUID id, String collectionName, SecureFileEntity secureFile) {
         //return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString())).toUri();
-        URI toUri = linkTo(methodOn(DownloadController.class).redirectToExternalUrl(fileName)).toUri();
+        URI toUri = linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, secureFile.getFilename(), id)).toUri();
         log.info("Returning after generateDownload: " + toUri);
-        return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(fileName)).toUri();
-
-       /// return returnLink;
-       // return URI.create(urlToFile);
+        return toUri;
 
     }
     
@@ -87,20 +77,29 @@ public class DownloadController {
         return new ResponseEntity<>(pendingDownload.getContent(), headers, HttpStatus.OK);
     }
     
-    @RequestMapping(value = "/redirectfile/{fileName}/", 
+    @RequestMapping(value = "/redirectfile/{collectionName}/{fileName}/{id}", 
                     method = RequestMethod.GET)
-    public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String fileName) {
+    public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String collectionName, @PathVariable String fileName, @PathVariable UUID id) {
         
-        //no length set*******943502
-        HttpHeaders httpHeaders = new HttpHeaders();
+        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(id, collectionName, fileName);
+        
+        if (!pendingDownloadOptional.isPresent() || pendingDownloadOptional.get().getPurgeTime().isBefore(Instant.now(clock))) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        HttpHeaders headers = new HttpHeaders();
         // The important thing is to avoid no-cache and no-store, for IE.
-        httpHeaders.setCacheControl("private, max-age=300"); 
-        httpHeaders.setContentType(MediaType.valueOf("application/pdf"));
-
-        httpHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
-        httpHeaders.setLocation(URI.create("https://s3-eu-west-1.amazonaws.com/dfd-898089864934/dfd/files/" + fileName));
+        headers.setCacheControl("private, max-age=300"); 
+        headers.setContentType(pendingDownloadOptional.get().getContentType());
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
+        Optional<String> url = recentDownloadCache.getUrl(id, collectionName, fileName);
+        URI location = null;
+        if (url.isPresent()) {
+            location = URI.create(url.get());
+        }
+        log.info("Setting location to save from as: " + location);
+        headers.setLocation(location);
                 
-        return new ResponseEntity<>(httpHeaders, HttpStatus.OK);
+        return new ResponseEntity<>(headers, HttpStatus.SEE_OTHER);
         
     }
     
