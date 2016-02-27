@@ -13,10 +13,12 @@ import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,8 +205,12 @@ public class BlobStoreServiceS3 implements BlobStoreService {
 
             InputStream in = object.getObjectContent();
             in.read(buffer, 0, length);
-            
-            Blob blob = new Blob(id, object.getObjectMetadata().getContentType(), buffer, expiryInstant, object.getRedirectLocation());
+            URI url = getUrl(id).orElse(null);
+            Blob blob = new Blob(id,                     
+                                object.getObjectMetadata().getContentType(), 
+                                buffer, 
+                                expiryInstant, 
+                                url == null ? null :url.toString());
             return Optional.of(blob);
         }
         catch (AmazonS3Exception ex) {
@@ -318,5 +325,20 @@ public class BlobStoreServiceS3 implements BlobStoreService {
 
         boolean doesObjectExist = s3.doesObjectExist(bucketName, blobId.getId());
         return doesObjectExist;
+    }   
+    
+    @Override
+    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix) throws BlobStoreException, BlobNotFoundException {
+        ObjectListing objectListing = s3.listObjects(bucketName, rootPath);
+        List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+        for (S3ObjectSummary sum : objectSummaries) {
+            String fileName = sum.getKey();
+            if (fileName.startsWith(rootPath + "/" + prefix) && fileName.endsWith(suffix)) {
+                //remove the root path from filename
+                String s3FileName = fileName.substring(rootPath.length() + 1);
+                return getBlob(new BlobId(s3FileName));
+            }
+        }
+        return Optional.empty();
     }
 }

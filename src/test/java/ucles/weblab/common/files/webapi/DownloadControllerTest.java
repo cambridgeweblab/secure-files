@@ -61,7 +61,7 @@ public class DownloadControllerTest {
         UUID id = UUID.randomUUID();
         Clock clock = Clock.systemUTC();
         Instant pt = Instant.now(clock).plus(Duration.ofSeconds(120));
-        PendingDownload pd = new PendingDownload(contentType, filename, content, pt, "www.url.com");
+        PendingDownload pd = new PendingDownload(contentType, filename, content, pt, URI.create("www.url.com"));
         inMemoryCache.put(id, "collection", pd);
         
         SecureFileEntity secureFileEntity = mockSecureFile(filename);

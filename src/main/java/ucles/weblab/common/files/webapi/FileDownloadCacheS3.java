@@ -5,7 +5,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,33 +60,28 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     @Override
     public Optional<PendingDownload> get(UUID id, String collectionName, String fileName ) {                
         
-        String fileNameToGet = createCacheEntryKey(id, collectionName, fileName);
-        
         try {
-            Optional<Blob> blob = blobStoreService.getBlob(new BlobId(fileNameToGet));
-            
+            Optional<Blob> blob = blobStoreService.getBlobWithPartBlobId(collectionName, fileName.replaceAll("\\s+", "_"));
             if (blob.isPresent()) {
                 Blob b = blob.get();
-                PendingDownload pd = new PendingDownload(MediaType.valueOf(b.getMimeType()), 
-                                                         id.toString(), 
-                                                         b.getData(),
-                                                         b.getExpiryDate(),
-                                                         b.getUrl());
                 
+                PendingDownload pd = new PendingDownload(MediaType.valueOf(b.getMimeType()), 
+                                                        b.getId().toString(), 
+                                                        b.getData(), 
+                                                        b.getExpiryDate(), 
+                                                        URI.create(b.getUrl()));
                 return Optional.of(pd);
             }
             
         } catch (BlobStoreException | BlobNotFoundException ex) {
-            
-            log.warn("Exception thrown when getting blob with id", ex);
-            return Optional.empty();
+            log.warn("Exception thrown while gtting blob with prefix: {} and suffix: {}", collectionName, fileName, ex);
         } 
         return Optional.empty();
     }
 
     @Override
     public Optional<BlobStoreResult> put(UUID id, String collectionName, PendingDownload pendingDownload) {
-        String fileNameToStore = createCacheEntryKey(id, collectionName, pendingDownload.getFilename());
+        String fileNameToStore = createCacheKey(id, collectionName, pendingDownload.getFilename());
                 
         try {
             Optional<BlobStoreResult> result = blobStoreService.putBlob(new BlobId(fileNameToStore), pendingDownload.getContentType().toString(), pendingDownload.getContent(), pendingDownload.getPurgeTime());
@@ -103,20 +97,20 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     @Override
     public boolean exists(UUID id, String collectionName, SecureFile secureFile) {
         
-        String fileNameToStore = createCacheEntryKey(id, collectionName, secureFile.getFilename());
+        String fileNameToStore = createCacheKey(id, collectionName, secureFile.getFilename());
         return blobStoreService.exists(new BlobId(fileNameToStore));
         
     }
     
     @Override
-    public Optional<String> getUrl(UUID id, String collectionName, String fileName) {
-        String s3fileName = createCacheEntryKey(id, collectionName, fileName);
+    public Optional<URI> getUrl(UUID id, String collectionName, String fileName) {
+        String s3fileName = createCacheKey(id, collectionName, fileName);
         try {
             Optional<URI> uri = blobStoreService.getUrl(new BlobId(s3fileName));
             
             if (uri.isPresent()) {
                 //recentFileNamesToUrls.put(collectionName + "_" + pendingDownload.getFilename(), uri.get().toString());
-                return Optional.of(uri.get().toString());
+                return Optional.of(uri.get());
             }
         } catch (BlobStoreException | BlobNotFoundException e) {
             log.warn("Exception thrown when getting into S3 blob with id", e);
@@ -150,5 +144,5 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
         return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, fileName, id)).toUri();
     }
-    
-}
+
+    }

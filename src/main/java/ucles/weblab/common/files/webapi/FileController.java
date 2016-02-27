@@ -243,8 +243,7 @@ public class FileController {
         
         if (fileOpt.isPresent()) {
             //if it's there, then set the location 
-            PendingDownload get = fileOpt.get();
-            location = URI.create(downloadCache.getUrl(id, bucket, filename).orElse(null));
+            location = fileOpt.get().getUrl();
         } else {
             final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
             if (found.isPresent()) {
@@ -252,7 +251,7 @@ public class FileController {
                 SecureFileEntity secureFile = found.get();
                                 
                 //get the url
-                String urlToFile = downloadCache.getUrl(id, bucket, secureFile.getFilename()).orElseGet(null);
+                URI urlToFile = downloadCache.getUrl(id, bucket, secureFile.getFilename()).orElseGet(null);
                 
                 //create PendingDownload to save
                 PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 

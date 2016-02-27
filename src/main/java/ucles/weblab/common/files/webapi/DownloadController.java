@@ -92,20 +92,14 @@ public class DownloadController {
                                                         @PathVariable String fileName, 
                                                         @PathVariable UUID id) {
         
-        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(id, collectionName, fileName);
-        
-        if (!pendingDownloadOptional.isPresent() || pendingDownloadOptional.get().getPurgeTime().isBefore(Instant.now(clock))) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
         HttpHeaders headers = new HttpHeaders();
         // The important thing is to avoid no-cache and no-store, for IE.
         headers.setCacheControl("private, max-age=300"); 
-        headers.setContentType(pendingDownloadOptional.get().getContentType());
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
-        Optional<String> url = recentDownloadCache.getUrl(id, collectionName, fileName);
+        Optional<URI> url = recentDownloadCache.getUrl(id, collectionName, fileName);
         URI location = null;
         if (url.isPresent()) {
-            location = URI.create(url.get());
+            location = url.get();
         }
         log.info("Setting location to save from as: " + location);
         headers.setLocation(location);

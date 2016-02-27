@@ -33,6 +33,8 @@ public interface BlobStoreService {
 
     public Optional<Blob> getBlob(BlobId id) throws BlobStoreException, BlobNotFoundException;
     
+    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix) throws BlobStoreException, BlobNotFoundException;
+    
     public Optional<Long> getBlobSize(BlobId id) throws BlobStoreException, BlobNotFoundException;
     
     public void removeBlob(BlobId id) throws BlobStoreException;

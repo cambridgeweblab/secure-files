@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.webapi;
 
+import java.net.URI;
 import java.time.Instant;
 import org.springframework.http.MediaType;
 
@@ -13,9 +14,9 @@ public class PendingDownload {
     final String filename;
     final byte[] content;
     final Instant purgeTime;
-    final String url; 
+    final URI url; 
     
-    PendingDownload(MediaType contentType, String filename, byte[] content, Instant purgeTime, String url) {
+    PendingDownload(MediaType contentType, String filename, byte[] content, Instant purgeTime, URI url) {
         this.contentType = contentType;
         this.content = content;
         this.filename = filename;
@@ -39,7 +40,7 @@ public class PendingDownload {
         return purgeTime;
     }
 
-    public String getUrl() {
+    public URI getUrl() {
         return url;
     }
     
