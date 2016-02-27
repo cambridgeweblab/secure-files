@@ -58,20 +58,17 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
      * @return 
      */
     @Override
-    public Optional<PendingDownload> get(UUID id, String collectionName, String fileName ) {                
-        
+    public Optional<PendingDownload> get(UUID id, String collectionName, String fileName ) {                        
         try {
             Optional<Blob> blob = blobStoreService.getBlobWithPartBlobId(collectionName, fileName.replaceAll("\\s+", "_"));
-            if (blob.isPresent()) {
-                Blob b = blob.get();
-                
+            blob.map((b) -> {                                
                 PendingDownload pd = new PendingDownload(MediaType.valueOf(b.getMimeType()), 
                                                         b.getId().toString(), 
                                                         b.getData(), 
                                                         b.getExpiryDate(), 
                                                         URI.create(b.getUrl()));
                 return Optional.of(pd);
-            }
+            });
             
         } catch (BlobStoreException | BlobNotFoundException ex) {
             log.warn("Exception thrown while gtting blob with prefix: {} and suffix: {}", collectionName, fileName, ex);
@@ -84,8 +81,10 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         String fileNameToStore = createCacheKey(id, collectionName, pendingDownload.getFilename());
                 
         try {
-            Optional<BlobStoreResult> result = blobStoreService.putBlob(new BlobId(fileNameToStore), pendingDownload.getContentType().toString(), pendingDownload.getContent(), pendingDownload.getPurgeTime());
-            
+            Optional<BlobStoreResult> result = blobStoreService.putBlob(new BlobId(fileNameToStore), 
+                                                                        pendingDownload.getContentType().toString(), 
+                                                                        pendingDownload.getContent(), 
+                                                                        pendingDownload.getPurgeTime());            
             return result;                                       
             
         } catch (BlobStoreException e) {
@@ -107,7 +106,6 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         String s3fileName = createCacheKey(id, collectionName, fileName);
         try {
             Optional<URI> uri = blobStoreService.getUrl(new BlobId(s3fileName));
-            
             if (uri.isPresent()) {
                 //recentFileNamesToUrls.put(collectionName + "_" + pendingDownload.getFilename(), uri.get().toString());
                 return Optional.of(uri.get());
@@ -128,6 +126,11 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         }
     }*/
     
+    @Override
+    public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
+        return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, fileName, id)).toUri();
+    }
+
     @Autowired(required = false) // will fall back to default system UTC clock
     public void configureClock(Clock clock) {
         log.warn("Clock overridden with " + clock);
@@ -139,10 +142,5 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
         log.info("Cache expiry set to " + cacheExpirySeconds + "s");
         this.cacheExpiry = Duration.ofSeconds(cacheExpirySeconds);
     }
-
-    @Override
-    public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
-        return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, fileName, id)).toUri();
-    }
-
-    }
+    
+}

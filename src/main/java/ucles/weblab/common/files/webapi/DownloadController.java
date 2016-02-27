@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -74,8 +73,14 @@ public class DownloadController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
-        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString(), fileName)).toUri();
-        HttpHeaders headers = getDownloadHeaders(pendingDownload.getFilename(), pendingDownload.getContentType(), pendingDownload.getContent().length, toUri);
+        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString(), fileName)).toUri();        
+        HttpHeaders headers = new HttpHeaders();
+        // The important thing is to avoid no-cache and no-store, for IE.
+        headers.setCacheControl("private, max-age=300"); 
+        headers.setContentType(pendingDownload.getContentType());
+        headers.setContentLength(pendingDownload.getContent().length);
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
+        headers.setLocation(toUri);        
         return new ResponseEntity<>(pendingDownload.getContent(), headers, HttpStatus.OK);
     }
     
@@ -106,17 +111,6 @@ public class DownloadController {
                 
         return new ResponseEntity<>(headers, HttpStatus.SEE_OTHER);
         
-    }
-    
-    private HttpHeaders getDownloadHeaders(String fileName, MediaType contentType, int length, URI uri) {
-        HttpHeaders headers = new HttpHeaders();
-        // The important thing is to avoid no-cache and no-store, for IE.
-        headers.setCacheControl("private, max-age=300"); 
-        headers.setContentType(contentType);
-        headers.setContentLength(length);
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
-        headers.setLocation(uri);
-        return headers;
-    }
+    }    
     
 }

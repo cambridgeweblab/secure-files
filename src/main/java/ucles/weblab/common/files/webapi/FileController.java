@@ -217,7 +217,7 @@ public class FileController {
 
     /**
      * The first point of call when the user clicks on the download. 
-     * @param collectionName
+     * @param bucket
      * @param filename
      * @return 
      */
