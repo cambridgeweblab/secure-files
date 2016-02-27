@@ -73,7 +73,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
                                                               pendingDownload.getFilename(), 
                                                               collectionName, 
                                                               pendingDownload.getPurgeTime(), 
-                                                              "");
+                                                              pendingDownload.getUrl());
         return Optional.of(blobStoreResult);
     }
     
@@ -102,8 +102,8 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
 
     @Override
     public Optional<String> getUrl(UUID id, String collectionName, String fileName) {
-        //String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString())).toUri().getPath();
-        return Optional.empty();
+        String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString(),fileName )).toUri().toString();
+        return Optional.of(url);
     }
 
     /*@Override

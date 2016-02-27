@@ -39,7 +39,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.Ignore;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -59,6 +61,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 /**
  * @since 20/03/15
@@ -418,7 +422,7 @@ public class FileControllerTest {
         fileController.fetchFileContent(bucketName, filename);
     }
 
-    @Test
+    @Test 
     @Ignore
     public void testGeneratingDownload() throws IOException {
         final String filename = "Timmy";
@@ -432,7 +436,7 @@ public class FileControllerTest {
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
-        when(downloadController.generateDownload(any(), eq(filename), any())).thenReturn(downloadUri);
+        when(downloadController.generateDownload(any(), eq(filename), any())).thenReturn(downloadUri);                
         final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 201 Created", HttpStatus.CREATED, result.getStatusCode());
         assertEquals("Should return a Location", result.getHeaders().getLocation(), downloadUri);

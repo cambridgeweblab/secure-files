@@ -204,6 +204,7 @@ public class FileController {
         return found.map((secureFile) -> {
             try {                        
                 HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.valueOf(secureFile.getContentType()));
                 headers.setLocation(downloadController.generateDownload(UUID.randomUUID(), bucket, secureFile));
                 final ResourceSupport resource = new ResourceSupport();
                 resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));

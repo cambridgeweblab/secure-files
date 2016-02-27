@@ -54,18 +54,17 @@ public class DownloadController {
     
     /**
      * This method is responsible for making the browser display a file>save as
-     * dialog box. 
+     * dialog box. If there is no trailing slash, then it does not cause a save-as
+     * box to appear. 
      * 
      * @param id
      * @param fileName
      * @return 
      */
-    @RequestMapping(value = "/{id}/{fileName}", 
+    @RequestMapping(value = "/{id}/{fileName}/", 
                     method = RequestMethod.GET)
     public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String id, @PathVariable String fileName) {
         final UUID downloadId = UUID.fromString(id);
-        
-        
         
         Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, id, fileName);
         
