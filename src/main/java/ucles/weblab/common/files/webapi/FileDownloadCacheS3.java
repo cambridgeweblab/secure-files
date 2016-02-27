@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import ucles.weblab.common.blob.api.Blob;
 import ucles.weblab.common.blob.api.BlobId;
 import ucles.weblab.common.blob.api.BlobNotFoundException;
@@ -41,6 +42,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     }
 
     @Override
+    @Scheduled(fixedRate = 15 * 60 * 1000)
     public void clean() {
         //do this later....
     }
@@ -61,15 +63,15 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     public Optional<PendingDownload> get(UUID id, String collectionName, String fileName ) {                        
         try {
             Optional<Blob> blob = blobStoreService.getBlobWithPartBlobId(collectionName, fileName.replaceAll("\\s+", "_"));
-            blob.map((b) -> {                                
-                PendingDownload pd = new PendingDownload(MediaType.valueOf(b.getMimeType()), 
-                                                        b.getId().toString(), 
-                                                        b.getData(), 
-                                                        b.getExpiryDate(), 
-                                                        URI.create(b.getUrl()));
-                return Optional.of(pd);
+            Optional<PendingDownload> result = blob.map((b) -> {                                
+                return new PendingDownload(MediaType.valueOf(b.getMimeType()),
+                        b.getId().toString(),
+                        b.getData(),
+                        b.getExpiryDate(),
+                        URI.create(b.getUrl()));
+                
             });
-            
+            return result;
         } catch (BlobStoreException | BlobNotFoundException ex) {
             log.warn("Exception thrown while gtting blob with prefix: {} and suffix: {}", collectionName, fileName, ex);
         } 
