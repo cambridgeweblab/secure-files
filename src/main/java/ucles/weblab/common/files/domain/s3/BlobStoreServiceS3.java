@@ -187,7 +187,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     }
 
     @Override
-    public Optional<Blob> getBlob(BlobId id) throws BlobStoreException, BlobNotFoundException {
+    public Optional<Blob> getBlob(BlobId id, boolean includeContent) throws BlobStoreException, BlobNotFoundException {
         S3Object object = null;
 
         try {
@@ -198,13 +198,17 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                 return Optional.empty();
             }
             
+            //get the expiry user meta data 
             String expiryString = object.getObjectMetadata().getUserMetaDataOf("expiry");
             Instant expiryInstant = Instant.parse(expiryString);
-            int length = (int)object.getObjectMetadata().getContentLength();
-            byte buffer[] = new byte[length];
-
-            InputStream in = object.getObjectContent();
-            in.read(buffer, 0, length);
+            
+            byte buffer[] = new byte[0];
+            if (includeContent) {
+                int length = (int)object.getObjectMetadata().getContentLength();
+                buffer = new byte[length];
+                InputStream in = object.getObjectContent();
+                in.read(buffer, 0, length);
+            }
             URI url = getUrl(id).orElse(null);
             Blob blob = new Blob(id,                     
                                 object.getObjectMetadata().getContentType(), 
@@ -328,7 +332,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     }   
     
     @Override
-    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix) throws BlobStoreException, BlobNotFoundException {
+    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix, boolean includeContent) throws BlobStoreException, BlobNotFoundException {
         ObjectListing objectListing = s3.listObjects(bucketName, rootPath);
         List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
         for (S3ObjectSummary sum : objectSummaries) {
@@ -336,7 +340,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             if (fileName.startsWith(rootPath + "/" + prefix) && fileName.endsWith(suffix)) {
                 //remove the root path from filename
                 String s3FileName = fileName.substring(rootPath.length() + 1);
-                return getBlob(new BlobId(s3FileName));
+                return getBlob(new BlobId(s3FileName), includeContent);
             }
         }
         return Optional.empty();

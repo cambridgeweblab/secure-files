@@ -31,9 +31,9 @@ public interface BlobStoreService {
     
     public void putBlob(BlobId id, String mimeType, InputStream in, int length) throws BlobStoreException;
 
-    public Optional<Blob> getBlob(BlobId id) throws BlobStoreException, BlobNotFoundException;
+    public Optional<Blob> getBlob(BlobId id, boolean includeContent) throws BlobStoreException, BlobNotFoundException;
     
-    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix) throws BlobStoreException, BlobNotFoundException;
+    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix, boolean includeContent) throws BlobStoreException, BlobNotFoundException;
     
     public Optional<Long> getBlobSize(BlobId id) throws BlobStoreException, BlobNotFoundException;
     

@@ -62,7 +62,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     @Override
     public Optional<PendingDownload> get(UUID id, String collectionName, String fileName ) {                        
         try {
-            Optional<Blob> blob = blobStoreService.getBlobWithPartBlobId(collectionName, fileName.replaceAll("\\s+", "_"));
+            Optional<Blob> blob = blobStoreService.getBlobWithPartBlobId(collectionName, fileName.replaceAll("\\s+", "_"), false);
             Optional<PendingDownload> result = blob.map((b) -> {                                
                 return new PendingDownload(MediaType.valueOf(b.getMimeType()),
                         b.getId().toString(),
