@@ -1,6 +1,5 @@
 package ucles.weblab.common.files.webapi;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -17,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import ucles.weblab.common.domain.BuilderProxyFactory;
 import ucles.weblab.common.webapi.exception.ResourceNotFoundException;
 import ucles.weblab.common.files.domain.FilesBuilders;
 import ucles.weblab.common.files.domain.FilesFactory;
@@ -39,10 +37,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import org.junit.Ignore;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
-import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertArrayEquals;
@@ -53,7 +47,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -61,8 +54,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static org.mockito.Mockito.spy;
 
 /**
  * @since 20/03/15
@@ -89,15 +81,23 @@ public class FileControllerTest {
 
     private FileController fileController;
     
+    @Mock
+    private FileDownloadCacheInMemory fileDownloadCacheInMemory;
+    
     @Before
     public void setUp() {
         FilesBuilders filesBuilders = new FilesBuilders();
-        FileDownloadCacheInMemory inMemoryCache = new FileDownloadCacheInMemory();
-                
-        fileController = new FileController(mockFilesFactory, mockSecureFileCollectionRepository,
-                mockSecureFileRepository,
-                fileMetadataResourceAssembler, fileCollectionResourceAssembler, downloadController,
-                filesBuilders.secureFileCollectionBuilder(), filesBuilders.secureFileBuilder(), inMemoryCache);
+        fileDownloadCacheInMemory = new FileDownloadCacheInMemory();
+        fileDownloadCacheInMemory.configureCacheExpiry(120);
+        fileController = new FileController(mockFilesFactory, 
+                                            mockSecureFileCollectionRepository,
+                                            mockSecureFileRepository,
+                                            fileMetadataResourceAssembler, 
+                                            fileCollectionResourceAssembler, 
+                                            downloadController,
+                                            filesBuilders.secureFileCollectionBuilder(), 
+                                            filesBuilders.secureFileBuilder(), 
+                                            fileDownloadCacheInMemory);
     }
 
     @Test
@@ -423,7 +423,6 @@ public class FileControllerTest {
     }
 
     @Test 
-    @Ignore
     public void testGeneratingDownload() throws IOException {
         final String filename = "Timmy";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
@@ -436,7 +435,9 @@ public class FileControllerTest {
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
-        when(downloadController.generateDownload(any(), eq(filename), any())).thenReturn(downloadUri);                
+                       
+        when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
+        
         final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 201 Created", HttpStatus.CREATED, result.getStatusCode());
         assertEquals("Should return a Location", result.getHeaders().getLocation(), downloadUri);

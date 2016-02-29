@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
 import ucles.weblab.common.blob.api.BlobId;
 import ucles.weblab.common.blob.api.BlobStoreResult;
@@ -72,7 +73,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
                                                               pendingDownload.getFilename(), 
                                                               collectionName, 
                                                               pendingDownload.getPurgeTime(), 
-                                                              pendingDownload.getUrl().toString());
+                                                              pendingDownload.getUrl()==null ? null : pendingDownload.getUrl().toString());
         return Optional.of(blobStoreResult);
     }
     
@@ -101,8 +102,14 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
 
     @Override
     public Optional<URI> getUrl(UUID id, String collectionName, String fileName) {
-        String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString(),fileName )).toUri().toString();
-        return Optional.of(URI.create(url));
+        try {
+            String url = ControllerLinkBuilder.linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString(),fileName )).toUri().toString();
+            return Optional.of(URI.create(url));
+        } catch (Exception e) {
+            log.warn("Exception caught while getting url from ControllerLinkBuilder, returning empty optional", e);
+            return Optional.empty();
+        }
+        
     }
 
     /*@Override
@@ -115,7 +122,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
 
     @Override
     public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
-        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString(), fileName)).toUri();
+        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id == null ? null : id.toString(), fileName)).toUri();
     }
 
     

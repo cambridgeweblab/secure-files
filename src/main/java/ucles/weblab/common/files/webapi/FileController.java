@@ -251,14 +251,14 @@ public class FileController {
                 SecureFileEntity secureFile = found.get();
                                 
                 //get the url
-                URI urlToFile = downloadCache.getUrl(id, bucket, secureFile.getFilename()).orElseGet(null);
-                
+                Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
+                                
                 //create PendingDownload to save
                 PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
                                                          secureFile.getFilename(), 
                                                          secureFile.getPlainData(), 
                                                          Instant.now(clock).plus(this.downloadCache.getExpiry()), 
-                                                         urlToFile);
+                                                         res.isPresent() ? res.get() : null);
                 //put it in the cache
                 Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);               
                 
