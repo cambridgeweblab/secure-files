@@ -202,10 +202,26 @@ public class FileController {
         }
         final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
         return found.map((secureFile) -> {
-            try {                        
+            try {            
+                
+                UUID id = UUID.randomUUID();
+                //get the url
+                Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
+                                
+                //create PendingDownload to save
+                PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
+                                                         secureFile.getFilename(), 
+                                                         secureFile.getPlainData(), 
+                                                         Instant.now(clock).plus(this.downloadCache.getExpiry()), 
+                                                         res.isPresent()? res.get() : null);
+                
+                //put it in the cache
+                Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);  
+                
+                
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.valueOf(secureFile.getContentType()));
-                headers.setLocation(downloadController.generateDownload(UUID.randomUUID(), bucket, secureFile));
+                headers.setLocation(downloadController.generateDownload(id, bucket, secureFile));
                 final ResourceSupport resource = new ResourceSupport();
                 resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
                 return new ResponseEntity<>(resource, headers, HttpStatus.SEE_OTHER);

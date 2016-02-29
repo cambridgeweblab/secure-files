@@ -54,10 +54,21 @@ import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import javax.transaction.Transactional;
 import org.junit.Ignore;
+import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.test.web.servlet.ResultActions;
 import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.IMAGE_JPEG;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -81,6 +92,12 @@ public class FileController_IT extends AbstractRestController_IT {
     private static final String BASE64_RESOURCE_NAME_2 = "base64-post-error500.crlf.txt";
     private static final String BASE64_RESOURCE_NAME_3 = "base64-post-error400.crlf.txt";
     private static final String IMAGE_RESOURCE_PATH = "beautiful_st_ives_cornwall_england_uk-1532356.jpg";
+
+    @Autowired
+    private FileDownloadCache fileDownloadCache;
+
+    @Autowired
+    private DownloadController downloadController;
 
     @Configuration
     @EnableJpaRepositories(basePackageClasses = {SecureFileCollectionRepositoryJpa.class})
@@ -120,8 +137,7 @@ public class FileController_IT extends AbstractRestController_IT {
         }
 
     }
-
-    @Ignore
+    
     @Test
     public void testUploadingBase64EncodedFile() throws Exception {
         MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<String, String>() {{
@@ -151,9 +167,16 @@ public class FileController_IT extends AbstractRestController_IT {
                     .andExpect(status().isCreated())
                     .andExpect(content().contentType(APPLICATION_JSON_UTF8))
                     .andExpect(jsonPath("$.notes", is(notes)))
-                    .andDo(result -> imageLocation.complete(result.getResponse().getHeader(LOCATION)))
-                    .andDo(result -> imageDownload.complete(URI.create(((List<String>) JsonPath.read(result.getResponse().getContentAsString(),
-                            "$.links[?(@.rel=='enclosure')].href")).get(0))));
+                    .andDo(result -> {
+                                String loc = result.getResponse().getHeader(LOCATION);
+                                System.out.println("imageLocation: " + loc);
+                                imageLocation.complete(loc);
+                    })
+                    .andDo(result -> {
+                                String loc = ((List<String>) JsonPath.read(result.getResponse().getContentAsString(),"$.links[?(@.rel=='enclosure')].href")).get(0);
+                                System.out.println("imageDownload: " + loc);
+                                imageDownload.complete(URI.create(loc));
+                    });
         }
 
         // Follow the download link to get redirected to a temporary link
@@ -162,13 +185,14 @@ public class FileController_IT extends AbstractRestController_IT {
         final CompletableFuture<URI> imageDownloadRedirected = new CompletableFuture<>();
 
         mockMvc.perform(get(relativeDownload))
-                .andExpect(status().is3xxRedirection())
-                .andDo(result -> imageDownloadRedirected.complete(URI.create(result.getResponse().getHeader(LOCATION))));
+            .andExpect(status().is3xxRedirection())
+            .andDo(result -> imageDownloadRedirected.complete(URI.create(result.getResponse().getHeader(LOCATION))));
 
         // Fetch the temporary link and check we got the binary data back.
         relativeDownload = toContextRelativeUri(imageDownloadRedirected.get(), contextRoot);
         final byte[] originalData = Resources.toByteArray(getClass().getResource(IMAGE_RESOURCE_PATH));
         mockMvc.perform(get(relativeDownload))
+                .andExpect(status().isOk())
                 .andExpect(content().contentType(IMAGE_JPEG))
                 .andExpect(content().bytes(originalData));
     }
