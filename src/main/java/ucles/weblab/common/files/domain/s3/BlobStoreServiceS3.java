@@ -84,7 +84,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         this.rootPath = rootPath;
         this.s3Region = s3region;
         
-        String bucketPolicyText = "{\"Version\":\"2016-02-24\", \"Statement\":[{\"Sid\":\"AddPerm\",\"Effect\":\"Allow\",\"Principal\": \"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::" + bucketName + "/*\"]}]}";
+        String bucketPolicyText = "{\"Version\":\"2012-10-17\", \"Statement\":[{\"Sid\":\"AddPerm\",\"Effect\":\"Allow\",\"Principal\": \"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::" + bucketName + "/*\"]}]}";
         log.info("Using the policy for: " + bucketPolicyText);
         //bucket names must be globally unique
         // 'us-east-1' region is returned as "US"
