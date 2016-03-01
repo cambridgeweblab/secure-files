@@ -56,16 +56,19 @@ public class DownloadController {
      * dialog box. If there is no trailing slash, then it does not cause a save-as
      * box to appear. 
      * 
+     * @param collectionName
      * @param id
      * @param fileName
      * @return 
      */
-    @RequestMapping(value = "/{id}/{fileName}/", 
+    @RequestMapping(value = "/{collectionName}/{id}/{fileName}/", 
                     method = RequestMethod.GET)
-    public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String id, @PathVariable String fileName) {
+    public ResponseEntity<byte[]> fetchPreviouslyGeneratedDownload(@PathVariable String collectionName, 
+                                                                   @PathVariable String id, 
+                                                                   @PathVariable String fileName) {
         final UUID downloadId = UUID.fromString(id);
         
-        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, id, fileName);
+        Optional<PendingDownload> pendingDownloadOptional = recentDownloadCache.get(downloadId, collectionName, fileName);
         
         PendingDownload pendingDownload = pendingDownloadOptional.orElse(null);
                 
@@ -73,7 +76,7 @@ public class DownloadController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
-        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString(), fileName)).toUri();        
+        URI toUri = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(downloadId.toString(), collectionName, fileName)).toUri();        
         HttpHeaders headers = new HttpHeaders();
         // The important thing is to avoid no-cache and no-store, for IE.
         headers.setCacheControl("private, max-age=300"); 

@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.Ignore;
 import org.springframework.mock.web.MockMultipartFile;
+import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFile;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.common.files.domain.SecureFileEntity;
@@ -62,13 +63,15 @@ public class DownloadControllerTest {
         Clock clock = Clock.systemUTC();
         Instant pt = Instant.now(clock).plus(Duration.ofSeconds(120));
         PendingDownload pd = new PendingDownload(contentType, filename, content, pt, URI.create("www.url.com"));
-        inMemoryCache.put(id, "collection", pd);
+        
+        String cacheKey = inMemoryCache.createCacheKey(id, "collection", filename);
+        Optional<BlobStoreResult> put = inMemoryCache.put(id, "collection", pd);
         
         SecureFileEntity secureFileEntity = mockSecureFile(filename);
                               
         final URI uri = downloadController.generateDownload(id, filename, secureFileEntity);
         assertTrue("The URI should be set", uri.toString().startsWith("http://localhost/downloads/"));
-        final ResponseEntity<byte[]> response = downloadController.fetchPreviouslyGeneratedDownload(id.toString(), filename);
+        final ResponseEntity<byte[]> response = downloadController.fetchPreviouslyGeneratedDownload("collection", id.toString(), filename);
         assertEquals("Should return 200 OK", HttpStatus.OK, response.getStatusCode());
         
         //wont work with s3 implementation as there is no content passed 

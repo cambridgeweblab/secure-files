@@ -32,7 +32,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final ConcurrentHashMap<UUID, PendingDownload> recentDownloadCache;        
+    private final ConcurrentHashMap<String, PendingDownload> recentDownloadCache;        
     private Clock clock = Clock.systemUTC();
     private Duration cacheExpiry;
     
@@ -46,9 +46,9 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     @Override
     @Scheduled(fixedRate = 15 * 60 * 1000)
     public void clean() {
-        final Iterator<Map.Entry<UUID, PendingDownload>> cacheEntries = recentDownloadCache.entrySet().iterator();
+        final Iterator<Map.Entry<String, PendingDownload>> cacheEntries = recentDownloadCache.entrySet().iterator();
         while (cacheEntries.hasNext()) {
-            Map.Entry<UUID, PendingDownload> cacheEntry =  cacheEntries.next();
+            Map.Entry<String, PendingDownload> cacheEntry =  cacheEntries.next();
             if (cacheEntry.getValue().getPurgeTime().isBefore(Instant.now(clock))) {
                 cacheEntries.remove();
             }
@@ -56,19 +56,26 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     }
        
     @Override
-    public Optional<PendingDownload> get(UUID id, String collectionName, String fileName) {
-        PendingDownload result = recentDownloadCache.get(id);
-        if (result == null) {
-            return Optional.empty();
-        } else {
-            return Optional.of(result);
-        }               
+    public Optional<PendingDownload> get(UUID id, String collectionName, String fileName) {        
+        final Iterator<Map.Entry<String, PendingDownload>> cacheEntries = recentDownloadCache.entrySet().iterator();
+        while (cacheEntries.hasNext()) {
+            Map.Entry<String, PendingDownload> cacheEntry =  cacheEntries.next();
+            String cacheKey = cacheEntry.getKey();
+            if (cacheKey.startsWith(collectionName) && cacheKey.endsWith(fileName.replaceAll("\\s+", "_"))) {
+                return Optional.of(cacheEntry.getValue());
+            }
+        }
+        
+        return Optional.empty();
+                    
     }
     
     
     @Override
     public Optional<BlobStoreResult> put(UUID id, String collectionName, PendingDownload pendingDownload) {
-        PendingDownload result = recentDownloadCache.put(id, pendingDownload );
+        
+        String key = createCacheKey(id, collectionName, pendingDownload.getFilename());
+        PendingDownload result = recentDownloadCache.put(key, pendingDownload );
         BlobStoreResult blobStoreResult = new BlobStoreResult(new BlobId(id.toString()), 
                                                               pendingDownload.getFilename(), 
                                                               collectionName, 
@@ -84,7 +91,8 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     
     @Override
     public boolean exists(UUID id, String collectionName, SecureFile secureFile) {
-        PendingDownload pd = recentDownloadCache.get(id);
+        String key = createCacheKey(id, collectionName, collectionName);
+        PendingDownload pd = recentDownloadCache.get(key);
         return pd != null;
     }
     
@@ -103,7 +111,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     @Override
     public Optional<URI> getUrl(UUID id, String collectionName, String fileName) {
         try {
-            String url = ControllerLinkBuilder.linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id.toString(),fileName )).toUri().toString();
+            String url = ControllerLinkBuilder.linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id.toString(),fileName )).toUri().toString();
             return Optional.of(URI.create(url));
         } catch (Exception e) {
             log.warn("Exception caught while getting url from ControllerLinkBuilder, returning empty optional", e);
@@ -122,7 +130,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
 
     @Override
     public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
-        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(id == null ? null : id.toString(), fileName)).toUri();
+        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id == null ? null : id.toString(), fileName)).toUri();
     }
 
     
