@@ -5,7 +5,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -35,12 +34,12 @@ import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import ucles.weblab.common.blob.api.Blob;
-import ucles.weblab.common.blob.api.BlobId;
-import ucles.weblab.common.blob.api.BlobNotFoundException;
-import ucles.weblab.common.blob.api.BlobStoreException;
-import ucles.weblab.common.blob.api.BlobStoreResult;
-import ucles.weblab.common.blob.api.BlobStoreService;
+import ucles.weblab.common.files.blob.api.Blob;
+import ucles.weblab.common.files.blob.api.BlobId;
+import ucles.weblab.common.files.blob.api.BlobNotFoundException;
+import ucles.weblab.common.files.blob.api.BlobStoreException;
+import ucles.weblab.common.files.blob.api.BlobStoreResult;
+import ucles.weblab.common.files.blob.api.BlobStoreService;
 
 /**
  *
@@ -349,8 +348,8 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             }
         }
         return Optional.empty();
-    }
-    
+    }        
+
     @Override
     public List<Blob> listBlobs(boolean includeContent) throws BlobStoreException, BlobNotFoundException {
         
@@ -361,18 +360,18 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         do {
             objectListing = s3.listObjects(listObjectsRequest);
             
-            objectListing.getObjectSummaries().stream().forEach((S3ObjectSummary s) -> {
+            for (S3ObjectSummary s : objectListing.getObjectSummaries() ) {
                 String name = s.getKey();
                 
                 //only return file that are under the root path and not the root path itself 
                 if (!name.equals(rootPath + "/")) { 
                     log.info("Adding object to delete: " + s.getKey());
                     BlobId id = new BlobId(s.getKey());
-                    Optional<Blob> blob = getBlob(id, includeContent);
+                    Optional<Blob> blob = getBlob(id, includeContent);                    
                     blob.ifPresent(m -> res.add(m));    
-                                                                          
                 }
-            });                        
+            }
+                                    
             listObjectsRequest.setMarker(objectListing.getNextMarker());
         } while (objectListing.isTruncated());    
             

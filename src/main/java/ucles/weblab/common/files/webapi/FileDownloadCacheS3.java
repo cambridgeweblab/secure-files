@@ -16,12 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
-import ucles.weblab.common.blob.api.Blob;
-import ucles.weblab.common.blob.api.BlobId;
-import ucles.weblab.common.blob.api.BlobNotFoundException;
-import ucles.weblab.common.blob.api.BlobStoreException;
-import ucles.weblab.common.blob.api.BlobStoreResult;
-import ucles.weblab.common.blob.api.BlobStoreService;
+import ucles.weblab.common.files.blob.api.Blob;
+import ucles.weblab.common.files.blob.api.BlobId;
+import ucles.weblab.common.files.blob.api.BlobNotFoundException;
+import ucles.weblab.common.files.blob.api.BlobStoreException;
+import ucles.weblab.common.files.blob.api.BlobStoreResult;
+import ucles.weblab.common.files.blob.api.BlobStoreService;
 import ucles.weblab.common.files.domain.SecureFile;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;

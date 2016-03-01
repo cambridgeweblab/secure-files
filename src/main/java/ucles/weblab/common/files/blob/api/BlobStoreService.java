@@ -1,4 +1,4 @@
-package ucles.weblab.common.blob.api;
+package ucles.weblab.common.files.blob.api;
 
 import java.io.InputStream;
 import java.net.URI;

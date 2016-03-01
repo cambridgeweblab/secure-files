@@ -6,10 +6,10 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import ucles.weblab.common.blob.api.BlobId;
-import ucles.weblab.common.blob.api.BlobStoreException;
-import ucles.weblab.common.blob.api.BlobStoreResult;
-import ucles.weblab.common.blob.api.BlobStoreService;
+import ucles.weblab.common.files.blob.api.BlobId;
+import ucles.weblab.common.files.blob.api.BlobStoreException;
+import ucles.weblab.common.files.blob.api.BlobStoreResult;
+import ucles.weblab.common.files.blob.api.BlobStoreService;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
 

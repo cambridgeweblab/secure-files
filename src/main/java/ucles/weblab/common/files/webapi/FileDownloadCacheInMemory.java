@@ -15,8 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
-import ucles.weblab.common.blob.api.BlobId;
-import ucles.weblab.common.blob.api.BlobStoreResult;
+import ucles.weblab.common.files.blob.api.BlobId;
+import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFile;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
