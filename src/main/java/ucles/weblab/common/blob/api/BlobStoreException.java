@@ -1,7 +1,3 @@
-/**
- * SCE CONFIDENTIAL Copyright (C) 2011 Sony Computer Entertainment Inc. All Rights Reserved.
- */
-
 package ucles.weblab.common.blob.api;
 
 /**

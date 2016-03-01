@@ -3,8 +3,13 @@ package ucles.weblab.common.files.webapi;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +49,27 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     @Override
     @Scheduled(fixedRate = 15 * 60 * 1000)
     public void clean() {
-        //do this later....
+        
+        try {
+            //get all the blob in the blob store
+            List<Blob> blobs = blobStoreService.listBlobs(false);
+            log.info("Found {} to delete", blobs.size());
+            blobs.stream().forEach((s) -> {
+                try {
+                    if (s.getExpiryDate().isBefore(Instant.now(clock))) {
+                        blobStoreService.removeBlob(s.getId());
+                    }                                        
+                } catch (BlobStoreException e) {
+                    log.warn("BlobStoreException caughting while removing item with key {}, cache might not be clear, ignoring exception and will try again", s, e);
+                }
+
+            });
+        } catch (BlobStoreException | BlobNotFoundException e) {
+            log.warn("BlobStoreException caughting while listing objects, cache might not have been cleared, ignoring", e);
+
+        }
+                
+        
     }
 
     @Override

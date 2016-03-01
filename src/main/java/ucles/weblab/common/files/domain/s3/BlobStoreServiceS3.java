@@ -13,6 +13,7 @@ import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectResult;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -26,9 +27,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -268,7 +271,9 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         log.info("Deleting BlobId[" + id + "]");
         
         try {
-            s3.deleteObject(bucketName, getKey(id));
+            s3.deleteObject(bucketName, id.getId());
+            //s3 will return success even if it failed?!?!
+            log.info("Returning from deleting object with id {}", id.getId());
         }
         catch (Exception ex) {
             throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to delete BlobId[" + id + "] from S3", ex);
@@ -345,4 +350,33 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         }
         return Optional.empty();
     }
+    
+    @Override
+    public List<Blob> listBlobs(boolean includeContent) throws BlobStoreException, BlobNotFoundException {
+        
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName).withPrefix(rootPath);
+        List<Blob> res = new ArrayList<>();
+        ObjectListing objectListing = s3.listObjects(listObjectsRequest);
+
+        do {
+            objectListing = s3.listObjects(listObjectsRequest);
+            
+            objectListing.getObjectSummaries().stream().forEach((S3ObjectSummary s) -> {
+                String name = s.getKey();
+                
+                //only return file that are under the root path and not the root path itself 
+                if (!name.equals(rootPath + "/")) { 
+                    log.info("Adding object to delete: " + s.getKey());
+                    BlobId id = new BlobId(s.getKey());
+                    Optional<Blob> blob = getBlob(id, includeContent);
+                    blob.ifPresent(m -> res.add(m));    
+                                                                          
+                }
+            });                        
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());    
+            
+        return res;
+    }
+    
 }
