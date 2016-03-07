@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +47,7 @@ import ucles.weblab.common.files.blob.api.BlobStoreService;
 public class BlobStoreServiceS3 implements BlobStoreService {
     
     private static final Logger log = LoggerFactory.getLogger(BlobStoreServiceS3.class);
-    
+        
     /*Amazon S3 Client to interact with*/
     private final AmazonS3 s3;
     
@@ -83,7 +82,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                 new AmazonS3Client(awsCredentials, new WeblabClientConfiguration(true, 5)) :
                 new AmazonS3Client(new DefaultAWSCredentialsProviderChain(), new WeblabClientConfiguration(true, 5));
         
-        this.rootPath = rootPath;
+        this.rootPath = rootPath;        
         this.s3Region = s3region;
         
         String bucketPolicyText = "{\"Version\":\"2012-10-17\", \"Statement\":[{\"Sid\":\"AddPerm\",\"Effect\":\"Allow\",\"Principal\": \"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::" + bucketName + "/*\"]}]}";
@@ -138,14 +137,13 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(data);
-            
             //set up some meta data
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(data.length);
             metadata.setContentType(mimeType);
             metadata.setExpirationTime(Date.from(expiryTime));
             metadata.addUserMetadata("expiry", expiryTime.toString());
-            
+            metadata.setContentDisposition("attachment; filename=\""+ id.getId() + '"');
             //set up the request
             PutObjectRequest request = new PutObjectRequest(bucketName, getKey(id), bis, metadata);                            
             request.withCannedAcl(CannedAccessControlList.PublicRead);
