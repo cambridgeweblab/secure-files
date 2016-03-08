@@ -265,10 +265,11 @@ public class BlobStoreServiceS3 implements BlobStoreService {
 
     @Override
     public void removeBlob(BlobId id) throws BlobStoreException {
-        log.info("Deleting BlobId[" + id + "]");
+        String fullNameToDelete = getKey(id);
+        log.info("Deleting BlobId[" + fullNameToDelete + "]");
         
         try {
-            s3.deleteObject(bucketName, id.getId());
+            s3.deleteObject(bucketName, fullNameToDelete);
             //s3 will return success even if it failed?!?!
             log.info("Returning from deleting object with id {}", id.getId());
         }
@@ -364,8 +365,13 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                 //only return file that are under the root path and not the root path itself 
                 if (!name.equals(rootPath + "/")) { 
                     log.info("Adding object to delete: " + s.getKey());
-                    BlobId id = new BlobId(s.getKey());
-                    Optional<Blob> blob = getBlob(id, includeContent);                    
+                    
+                    //remove the rootpath part of the filename
+                    if (rootPath == null || rootPath.isEmpty()) {
+                        name = name.replaceFirst(rootPath + "/", "");
+                    }                            
+                    //get the blob and add it to the list 
+                    Optional<Blob> blob = getBlob(new BlobId(name), includeContent);                    
                     blob.ifPresent(m -> res.add(m));    
                 }
             }
