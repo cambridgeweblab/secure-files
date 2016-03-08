@@ -364,13 +364,14 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                 
                 //only return file that are under the root path and not the root path itself 
                 if (!name.equals(rootPath + "/")) { 
-                    log.info("Adding object to delete: " + s.getKey());
                     
-                    //remove the rootpath part of the filename
-                    if (rootPath == null || rootPath.isEmpty()) {
+                    
+                    //remove the rootpath part of the filename, if there is one
+                    if (rootPath != null || !rootPath.isEmpty()) {
                         name = name.replaceFirst(rootPath + "/", "");
                     }                            
                     //get the blob and add it to the list 
+                    log.info("Adding object to delete: " + name);
                     Optional<Blob> blob = getBlob(new BlobId(name), includeContent);                    
                     blob.ifPresent(m -> res.add(m));    
                 }
