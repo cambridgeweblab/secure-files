@@ -37,8 +37,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -48,6 +55,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.same;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -61,6 +69,9 @@ import static org.mockito.Mockito.spy;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class FileControllerTest {
+    
+    private static final Logger log = LoggerFactory.getLogger(FileControllerTest.class);
+    
     private static final String FILE_RESOURCE_NAME = "81672667_bus.jpg";
     private static final String FILE_RESOURCE_PATH = FILE_RESOURCE_NAME;
 
@@ -468,6 +479,41 @@ public class FileControllerTest {
         verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
 
+    @Test
+    public void testMultipleInitialRequestsToSameFile() throws Exception {
+        //set up collections and filenames
+        final String filename = "some-test-filename";
+        final String collectionName = "My-Collection";
+        final SecureFileCollectionEntity collection = mockSecureFileCollection(collectionName, Optional.of(Instant.now()));
+        final String bucketName = collection.getBucket();
+        final SecureFileEntity file = mock(SecureFileEntity.class);
+        when(file.getFilename()).thenReturn(filename);
+        when(file.getContentType()).thenReturn("text/pdf");
+        when(file.getPlainData()).thenReturn(new byte[0]);
+        final URI downloadUri = URI.create("urn:some-test-url");
+
+        when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
+        when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));                       
+        when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
+        
+        ExecutorService executor = Executors.newFixedThreadPool(10);       
+        int NUM_ITERATIONS = 3;
+        int NUM_THREADS = 5; 
+        
+        for (int i = 0; i < NUM_THREADS; i++) {
+            log.info("Executing thread {}", i);
+            executor.submit(() -> {
+                for (int j1 = 0; j1 < NUM_ITERATIONS; j1++) {
+                    log.info("In interation {}", j1);
+                    ResponseEntity<ResourceSupport> generateDownloadLink = fileController.generateDownloadLink(bucketName, filename);
+                }
+            });
+        }
+
+        verify(this.downloadController, atMost(1)).generateDownload(any(), anyString(), any());
+
+    }
+    
     private static SecureFileEntity mockSecureFile(MockMultipartFile file) {
         final SecureFileEntity fileEntity = mock(SecureFileEntity.class);
         when(fileEntity.getFilename()).thenReturn(file.getOriginalFilename());

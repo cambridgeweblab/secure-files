@@ -249,7 +249,6 @@ public class FileController {
         if (collection == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        
         //always create a random id, first time round
         UUID id = UUID.randomUUID();
         
@@ -263,23 +262,8 @@ public class FileController {
         } else {
             final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
             if (found.isPresent()) {
-                //get the file
-                SecureFileEntity secureFile = found.get();
-                                
-                //get the url
-                Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
-                                
-                //create PendingDownload to save
-                PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
-                                                         secureFile.getFilename(), 
-                                                         secureFile.getPlainData(), 
-                                                         Instant.now(clock).plus(this.downloadCache.getExpiry()), 
-                                                         res.isPresent() ? res.get() : null);
-                //put it in the cache
-                Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);               
-                
-                //get location
-                location = downloadController.generateDownload(id, bucket, found.get());  
+                //get the file and get it's location              
+                location = getLocation(id, bucket, found.get());
                 
             } else {
                 //it's not in the cache nor the repository
@@ -295,6 +279,31 @@ public class FileController {
 
     }
     
+    /**
+     * Private helper method to get the location of a SecureFileEntity
+     * @param id - the id used for the download 
+     * @param bucket - the collection name 
+     * @param secureFile - the file to get
+     * @return 
+     */
+    private synchronized URI getLocation(UUID id, String bucket, SecureFileEntity secureFile) {
+        //get the url
+        Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
+
+        //create PendingDownload to save
+        PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
+                                                 secureFile.getFilename(), 
+                                                 secureFile.getPlainData(), 
+                                                 Instant.now(clock).plus(this.downloadCache.getExpiry()), 
+                                                 res.isPresent() ? res.get() : null);
+        //put it in the cache
+        Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);               
+
+        //get location
+        URI location = downloadController.generateDownload(id, bucket, secureFile);  
+
+        return location;
+    }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<FileMetadataResource> uploadFileToBucket(@RequestParam String collection, @RequestParam(required = false) String notes, @RequestParam MultipartFile file) throws IOException {

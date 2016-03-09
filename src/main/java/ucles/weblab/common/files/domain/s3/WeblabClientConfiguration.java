@@ -6,11 +6,19 @@ import com.amazonaws.Protocol;
 
 
 /**
- *
+ * Extend the Amazon client configuration to provide some other reusable 
+ * functionality. 
+ * 
  * @author Sukhraj
  */
 public final class WeblabClientConfiguration extends ClientConfiguration {
     
+    /**
+     * Specify if it's secure and the maximum number of retries. 
+     * 
+     * @param secure
+     * @param maxRetries 
+     */
     public WeblabClientConfiguration(boolean secure, int maxRetries){
         
         this(secure);

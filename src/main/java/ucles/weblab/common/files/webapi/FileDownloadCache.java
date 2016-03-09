@@ -24,7 +24,6 @@ public interface FileDownloadCache<T extends Serializable, PendingDownload> {
     
     Duration getExpiry();
     
-    //why do we need this?????!!!! it does a get anyway on the cache. 
     boolean exists(T id, String collectionName, SecureFile secureFile);
     
     Optional<URI> getUrl(T id, String collectionName, String fileName);
