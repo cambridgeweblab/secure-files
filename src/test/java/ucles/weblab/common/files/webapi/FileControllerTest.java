@@ -33,15 +33,28 @@ import ucles.weblab.common.files.webapi.resource.FileMetadataResource;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -478,9 +491,9 @@ public class FileControllerTest {
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
         verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
-
+    
     @Test
-    public void testMultipleInitialRequestsToSameFile() throws Exception {
+    public void testConcurrentFirstRequestsToSameFile() throws Exception {
         //set up collections and filenames
         final String filename = "some-test-filename";
         final String collectionName = "My-Collection";
@@ -491,27 +504,36 @@ public class FileControllerTest {
         when(file.getContentType()).thenReturn("text/pdf");
         when(file.getPlainData()).thenReturn(new byte[0]);
         final URI downloadUri = URI.create("urn:some-test-url");
-
+        
+        //mock the request in this unit test since it builds URLs based on rest controller. 
+        MockHttpServletRequest request = MockMvcRequestBuilders.get("http://example.com/").buildRequest(new MockServletContext());
+        final RequestAttributes requestAttributes = new ServletRequestAttributes(request);
+        RequestContextHolder.setRequestAttributes(requestAttributes, true);
+        
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));                       
         when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
+                
+        //wrap what we are testing into a Callable task
+        Callable<ResponseEntity<ResourceSupport>> task = () -> fileController.generateDownloadLink(bucketName, filename);
         
-        ExecutorService executor = Executors.newFixedThreadPool(10);       
-        int NUM_ITERATIONS = 3;
-        int NUM_THREADS = 5; 
+        //create the task n times
+        int threadCount = 500;
+        List<Callable<ResponseEntity<ResourceSupport>>> tasks = Collections.nCopies(threadCount, task);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         
-        for (int i = 0; i < NUM_THREADS; i++) {
-            log.info("Executing thread {}", i);
-            executor.submit(() -> {
-                for (int j1 = 0; j1 < NUM_ITERATIONS; j1++) {
-                    log.info("In interation {}", j1);
-                    ResponseEntity<ResourceSupport> generateDownloadLink = fileController.generateDownloadLink(bucketName, filename);
-                }
-            });
+        //call the tasks and save the responses
+        List<Future<ResponseEntity<ResourceSupport>>> futures = executorService.invokeAll(tasks);
+        List<ResponseEntity<ResourceSupport>> resultList = new ArrayList<>(futures.size());
+        
+        //get all the futures
+        for (Future<ResponseEntity<ResourceSupport>> future : futures) {
+            // Throws an exception if an exception was thrown by the task.
+            resultList.add(future.get());
         }
-
+        Assert.assertEquals(threadCount, futures.size());
         verify(this.downloadController, atMost(1)).generateDownload(any(), anyString(), any());
-
+        
     }
     
     private static SecureFileEntity mockSecureFile(MockMultipartFile file) {

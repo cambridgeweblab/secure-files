@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,9 @@ public class FileController {
     private final Supplier<SecureFile.Builder> secureFileBuilder;
     private final FileDownloadCache<UUID, PendingDownload> downloadCache;
     private Clock clock = Clock.systemUTC();
+    
+    private boolean isFilePresent;
+    private final Object mutex = new Object();
     
     private static class DecryptionFailedException extends NestedRuntimeException {
         public DecryptionFailedException(Exception e) {
@@ -243,7 +247,8 @@ public class FileController {
     @PreAuthorize("isAuthenticated()")
     @AccessAudited
     public ResponseEntity<ResourceSupport> generateDownloadLink(@PathVariable String bucket, 
-                                                                @PathVariable String filename) {        
+                                                                @PathVariable String filename) {                         
+                
         //get the collection name 
         final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
         if (collection == null) {
@@ -251,32 +256,49 @@ public class FileController {
         }
         //always create a random id, first time round
         UUID id = UUID.randomUUID();
-        
-        //get it from the cache
-        Optional<PendingDownload> fileOpt = downloadCache.get(id, bucket, filename);
-        final URI location;     
-        
-        if (fileOpt.isPresent()) {
-            //if it's there, then set the location 
-            location = fileOpt.get().getUrl();
-        } else {
-            final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
-            if (found.isPresent()) {
-                //get the file and get it's location              
-                location = getLocation(id, bucket, found.get());
-                
-            } else {
-                //it's not in the cache nor the repository
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }            
+        URI location = null;
+        Optional<PendingDownload> fileOpt = Optional.empty();
+        synchronized (mutex) {
+            //one thread at a time                
+            log.info(Thread.currentThread().getName() + " thread is getting file from cache");
+            fileOpt = downloadCache.get(id, bucket, filename);
         }
-               
-        HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(location);
-        final ResourceSupport resource = new ResourceSupport();        
-        resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
-        return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
 
+        synchronized (mutex) {
+            if (fileOpt.isPresent()) {
+                log.info(Thread.currentThread().getName() + " thread found file in cache");
+                //if it's there, then set the location 
+                location = fileOpt.get().getUrl();
+                isFilePresent = true;
+            } else {        
+                //get the location
+                if (!isFilePresent) {
+                    log.info(Thread.currentThread().getName() + " thread not found file in cache, going to database.");
+                    //this should only be done ONCE no matter how many first threads.
+                    Optional<URI> optReturn  = getLocation(id, bucket, collection, filename);
+                    if (optReturn.isPresent()) {
+                        location = optReturn.get();
+                        isFilePresent = true;
+                    } else {
+                        //it's not in the cache nor the repository
+                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                    }  
+                }
+            }
+        }
+
+        if (location != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setLocation(location);
+            final ResourceSupport resource = new ResourceSupport();        
+            resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
+            return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        
+
+        
     }
     
     /**
@@ -286,23 +308,35 @@ public class FileController {
      * @param secureFile - the file to get
      * @return 
      */
-    private synchronized URI getLocation(UUID id, String bucket, SecureFileEntity secureFile) {
-        //get the url
-        Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
+    private synchronized Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename) {
+        final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
+            
+        //if there is a filename 
+        if (found.isPresent()) {
+            log.info(Thread.currentThread().getName() + " thread getting file from database and adding cache");
+            //get the file object
+            SecureFileEntity secureFile = found.get();
+            
+            //each cache knows how to create a url
+            Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
 
-        //create PendingDownload to save
-        PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
-                                                 secureFile.getFilename(), 
-                                                 secureFile.getPlainData(), 
-                                                 Instant.now(clock).plus(this.downloadCache.getExpiry()), 
-                                                 res.isPresent() ? res.get() : null);
-        //put it in the cache
-        Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);               
+            //create PendingDownload to put in the cache
+            PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
+                                                     secureFile.getFilename(), 
+                                                     secureFile.getPlainData(), 
+                                                     Instant.now(clock).plus(this.downloadCache.getExpiry()), 
+                                                     res.isPresent() ? res.get() : null);
+            //put it in the cache
+            Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);               
 
-        //get location
-        URI location = downloadController.generateDownload(id, bucket, secureFile);  
-
-        return location;
+            //get location
+            URI location = downloadController.generateDownload(id, bucket, secureFile);  
+            this.isFilePresent = true;
+            return Optional.of(location);
+        } else {
+            return Optional.empty();
+        }
+              
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
