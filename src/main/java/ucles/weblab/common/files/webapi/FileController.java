@@ -73,8 +73,7 @@ public class FileController {
     private final Supplier<SecureFile.Builder> secureFileBuilder;
     private final FileDownloadCache<UUID, PendingDownload> downloadCache;
     private Clock clock = Clock.systemUTC();
-    
-    private boolean isFilePresent;
+        
     private final Object mutex = new Object();
     
     private static class DecryptionFailedException extends NestedRuntimeException {
@@ -258,43 +257,39 @@ public class FileController {
         UUID id = UUID.randomUUID();
         URI location = null;
         Optional<PendingDownload> fileOpt = Optional.empty();
+        
         synchronized (mutex) {
             //one thread at a time                
-            log.info(Thread.currentThread().getName() + " thread is getting file from cache");
+            log.info(Thread.currentThread().getName() + " thread is getting {} from cache", filename);
             fileOpt = downloadCache.get(id, bucket, filename);
-            log.info("Got the file from the cache");
-        }
-
-        synchronized (mutex) {
+        
             if (fileOpt.isPresent()) {
-                log.info(Thread.currentThread().getName() + " thread found file in cache");
+                log.info(Thread.currentThread().getName() + " thread found {} in cache", filename);
                 //if it's there, then set the location 
-                location = fileOpt.get().getUrl();
-                isFilePresent = true;
-            } else {        
-                //get the location
-                if (!isFilePresent) {
-                    log.info(Thread.currentThread().getName() + " thread not found file in cache, going to database.");
-                    //this should only be done ONCE no matter how many first threads.
-                    Optional<URI> optReturn  = getLocation(id, bucket, collection, filename);
-                    if (optReturn.isPresent()) {
-                        location = optReturn.get();
-                        isFilePresent = true;
-                    } else {
-                        //it's not in the cache nor the repository
-                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                    }  
-                }
+                location = fileOpt.get().getUrl();                
+            } else {                                       
+                log.info(Thread.currentThread().getName() + " thread not found {} in cache, going to database", filename);
+                //this should only be done ONCE no matter how many first threads.
+                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename);
+                if (optReturn.isPresent()) {
+                    location = optReturn.get();                    
+                } else {
+                    log.info("{} not found in repository, returning 404", filename);
+                    //it's not in the cache nor the repository
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                }                  
             }
         }
 
         if (location != null) {
+            log.info("Location was found, setting headers");
             HttpHeaders headers = new HttpHeaders();
             headers.setLocation(location);
             final ResourceSupport resource = new ResourceSupport();        
             resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
             return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
         } else {
+            log.info("Location was never found, returning 404");
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
@@ -332,7 +327,7 @@ public class FileController {
 
             //get location
             URI location = downloadController.generateDownload(id, bucket, secureFile);  
-            this.isFilePresent = true;
+            
             return Optional.of(location);
         } else {
             return Optional.empty();
