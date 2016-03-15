@@ -262,6 +262,7 @@ public class FileController {
             //one thread at a time                
             log.info(Thread.currentThread().getName() + " thread is getting file from cache");
             fileOpt = downloadCache.get(id, bucket, filename);
+            log.info("Got the file from the cache");
         }
 
         synchronized (mutex) {
