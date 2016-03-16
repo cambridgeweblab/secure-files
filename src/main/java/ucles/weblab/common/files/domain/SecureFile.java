@@ -7,11 +7,7 @@ import ucles.weblab.common.domain.Buildable;
  *
  * @since 05/06/15
  */
-public interface SecureFile extends Buildable<SecureFile> {
-    String getFilename();
-    String getContentType();
-    long getLength();
-    String getNotes();
+public interface SecureFile extends Buildable<SecureFile>, SecureFileMetadata {
     byte[] getPlainData();
 
     interface Builder extends Buildable.Builder<SecureFile> {

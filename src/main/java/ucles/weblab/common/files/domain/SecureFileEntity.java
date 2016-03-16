@@ -5,7 +5,7 @@ package ucles.weblab.common.files.domain;
  *
  * @since 05/06/15
  */
-public interface SecureFileEntity extends MutableSecureFile {
+public interface SecureFileEntity extends MutableSecureFile, SecureFileMetadataEntity {
     SecureFileCollectionEntity getCollection();
 
     boolean isNew();
