@@ -16,7 +16,7 @@ import javax.persistence.Table;
  *
  * @since 16/03/2016
  */
-@Entity(name = "SecureFile")
+@Entity(name = "SecureFileMetadata")
 @Immutable
 @Table(name = "secure_files")
 public class SecureFileMetadataEntityJpa implements SecureFileMetadataEntity {

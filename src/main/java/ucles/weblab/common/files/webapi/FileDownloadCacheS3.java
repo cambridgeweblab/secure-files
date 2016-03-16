@@ -4,12 +4,10 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Level;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,7 @@ import ucles.weblab.common.files.blob.api.BlobNotFoundException;
 import ucles.weblab.common.files.blob.api.BlobStoreException;
 import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.blob.api.BlobStoreService;
-import ucles.weblab.common.files.domain.SecureFile;
+import ucles.weblab.common.files.domain.SecureFileMetadata;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
@@ -121,9 +119,9 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     }
     
     @Override
-    public boolean exists(UUID id, String collectionName, SecureFile secureFile) {
+    public boolean exists(UUID id, String collectionName, SecureFileMetadata secureFileMetadata) {
         
-        String fileNameToStore = createCacheKey(id, collectionName, secureFile.getFilename());
+        String fileNameToStore = createCacheKey(id, collectionName, secureFileMetadata.getFilename());
         return blobStoreService.exists(new BlobId(fileNameToStore));
         
     }

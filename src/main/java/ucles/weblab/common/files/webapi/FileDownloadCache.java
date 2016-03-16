@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import ucles.weblab.common.files.blob.api.BlobStoreResult;
-import ucles.weblab.common.files.domain.SecureFile;
+import ucles.weblab.common.files.domain.SecureFileMetadata;
 
 /**
  *
@@ -24,7 +24,7 @@ public interface FileDownloadCache<T extends Serializable, PendingDownload> {
     
     Duration getExpiry();
     
-    boolean exists(T id, String collectionName, SecureFile secureFile);
+    boolean exists(T id, String collectionName, SecureFileMetadata secureFileMetadata);
     
     Optional<URI> getUrl(T id, String collectionName, String fileName);
     

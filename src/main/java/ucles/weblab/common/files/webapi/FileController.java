@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import ucles.weblab.common.files.domain.SecureFileMetadataEntity;
+import ucles.weblab.common.files.domain.SecureFileMetadataRepository;
 import ucles.weblab.common.webapi.AccessAudited;
 import ucles.weblab.common.webapi.exception.ResourceNotFoundException;
 import ucles.weblab.common.files.domain.FilesFactory;
@@ -39,7 +41,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +67,7 @@ public class FileController {
     private final FilesFactory filesFactory;
     private final SecureFileCollectionRepository secureFileCollectionRepository;
     private final SecureFileRepository secureFileRepository;
+    private final SecureFileMetadataRepository secureFileMetadataRepository;
     private final FileMetadataResourceAssembler fileMetadataResourceAssembler;
     private final FileCollectionResourceAssembler fileCollectionResourceAssembler;
     private final DownloadController downloadController;
@@ -83,18 +85,20 @@ public class FileController {
     }
 
     @Autowired
-    public FileController(FilesFactory filesFactory, 
-                          SecureFileCollectionRepository secureFileCollectionRepository, 
+    public FileController(FilesFactory filesFactory,
+                          SecureFileCollectionRepository secureFileCollectionRepository,
                           SecureFileRepository secureFileRepository,
+                          SecureFileMetadataRepository secureFileMetadataRepository,
                           FileMetadataResourceAssembler fileMetadataResourceAssembler,
-                          FileCollectionResourceAssembler fileCollectionResourceAssembler, 
+                          FileCollectionResourceAssembler fileCollectionResourceAssembler,
                           DownloadController downloadController,
-                          Supplier<SecureFileCollection.Builder> secureFileCollectionBuilder, 
+                          Supplier<SecureFileCollection.Builder> secureFileCollectionBuilder,
                           Supplier<SecureFile.Builder> secureFileBuilder,
                           FileDownloadCache<UUID, PendingDownload> downloadCache) {
         this.filesFactory = filesFactory;
         this.secureFileCollectionRepository = secureFileCollectionRepository;
         this.secureFileRepository = secureFileRepository;
+        this.secureFileMetadataRepository = secureFileMetadataRepository;
         this.fileMetadataResourceAssembler = fileMetadataResourceAssembler;
         this.fileCollectionResourceAssembler = fileCollectionResourceAssembler;
         this.downloadController = downloadController;
@@ -129,7 +133,7 @@ public class FileController {
         if (collection == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return ResponseEntity.ok(secureFileRepository.findAllByCollection(collection).stream()
+        return ResponseEntity.ok(secureFileMetadataRepository.findAllByCollection(collection).stream()
                 .map(fileMetadataResourceAssembler::toResource)
                 .collect(toList()));
     }
@@ -142,7 +146,7 @@ public class FileController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
+        final Optional<? extends SecureFileMetadataEntity> found = secureFileMetadataRepository.findOneByCollectionAndFilename(collection, filename);
         return found
                 .map(secureFile -> ResponseEntity.ok(fileMetadataResourceAssembler.toResource(secureFile)))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -300,8 +304,9 @@ public class FileController {
     /**
      * Private helper method to get the location of a SecureFileEntity
      * @param id - the id used for the download 
-     * @param bucket - the collection name 
-     * @param secureFile - the file to get
+     * @param bucket - the collection name
+     * @param collection - the collection itself
+     * @param filename - the file to get
      * @return 
      */
     private synchronized Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename) {

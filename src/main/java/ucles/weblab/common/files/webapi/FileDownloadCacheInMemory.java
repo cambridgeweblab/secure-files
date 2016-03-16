@@ -17,7 +17,7 @@ import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
 import ucles.weblab.common.files.blob.api.BlobId;
 import ucles.weblab.common.files.blob.api.BlobStoreResult;
-import ucles.weblab.common.files.domain.SecureFile;
+import ucles.weblab.common.files.domain.SecureFileMetadata;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
@@ -90,7 +90,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     }
     
     @Override
-    public boolean exists(UUID id, String collectionName, SecureFile secureFile) {
+    public boolean exists(UUID id, String collectionName, SecureFileMetadata secureFileMetadata) {
         String key = createCacheKey(id, collectionName, collectionName);
         PendingDownload pd = recentDownloadCache.get(key);
         return pd != null;

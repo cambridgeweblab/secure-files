@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import ucles.weblab.common.files.domain.SecureFileMetadataRepository;
 import ucles.weblab.common.webapi.exception.ResourceNotFoundException;
 import ucles.weblab.common.files.domain.FilesBuilders;
 import ucles.weblab.common.files.domain.FilesFactory;
@@ -37,16 +38,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -57,8 +56,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -95,6 +92,8 @@ public class FileControllerTest {
     @Mock
     private SecureFileRepository mockSecureFileRepository;
     @Mock
+    private SecureFileMetadataRepository mockSecureFileMetadataRepository;
+    @Mock
     private FileMetadataResourceAssembler fileMetadataResourceAssembler;
     @Mock
     private FileCollectionResourceAssembler fileCollectionResourceAssembler;
@@ -116,7 +115,8 @@ public class FileControllerTest {
         fileController = new FileController(mockFilesFactory, 
                                             mockSecureFileCollectionRepository,
                                             mockSecureFileRepository,
-                                            fileMetadataResourceAssembler, 
+                                            mockSecureFileMetadataRepository,
+                                            fileMetadataResourceAssembler,
                                             fileCollectionResourceAssembler, 
                                             downloadController,
                                             filesBuilders.secureFileCollectionBuilder(), 
@@ -222,7 +222,7 @@ public class FileControllerTest {
         FileMetadataResource resource2 = new FileMetadataResource("file2", "audio/x-mp3", 3279131L, null);
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
-        when(mockSecureFileRepository.findAllByCollection(collection)).thenReturn((Collection) Arrays.asList(file1, file2));
+        when(mockSecureFileMetadataRepository.findAllByCollection(collection)).thenReturn((Collection) Arrays.asList(file1, file2));
         when(fileMetadataResourceAssembler.toResource(same(file1))).thenReturn(resource1);
         when(fileMetadataResourceAssembler.toResource(same(file2))).thenReturn(resource2);
 
@@ -236,7 +236,7 @@ public class FileControllerTest {
         final ResponseEntity<List<FileMetadataResource>> result = fileController.listFilesInBucket(bucketName);
 
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
-        verify(mockSecureFileRepository, never()).findAllByCollection(any());
+        verify(mockSecureFileMetadataRepository, never()).findAllByCollection(any());
     }
 
     @Test
@@ -248,7 +248,7 @@ public class FileControllerTest {
         final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null);
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
-        when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
+        when(mockSecureFileMetadataRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
         when(fileMetadataResourceAssembler.toResource(same(file))).thenReturn(resource);
         final ResponseEntity<FileMetadataResource> result = fileController.getFileMetadata(bucketName, filename);
         assertEquals("Should return 200 OK", HttpStatus.OK, result.getStatusCode());
@@ -273,12 +273,12 @@ public class FileControllerTest {
 
         SecureFileCollectionEntity collection = mockSecureFileCollection("TICKET COLLECTION", Optional.of(Instant.now()));
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
-        when(mockSecureFileRepository.findOneByCollectionAndFilename(any(), any())).thenReturn(Optional.empty());
+        when(mockSecureFileMetadataRepository.findOneByCollectionAndFilename(any(), any())).thenReturn(Optional.empty());
         final ResponseEntity<FileMetadataResource> result = fileController.getFileMetadata(bucketName, filename);
 
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
 
-        verify(mockSecureFileRepository, times(1)).findOneByCollectionAndFilename(collection, filename);
+        verify(mockSecureFileMetadataRepository, times(1)).findOneByCollectionAndFilename(collection, filename);
     }
 
     @Test

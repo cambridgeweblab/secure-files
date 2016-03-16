@@ -2,6 +2,7 @@ package ucles.weblab.common.files.webapi.converter;
 
 import org.springframework.hateoas.ResourceAssembler;
 import ucles.weblab.common.files.domain.SecureFileEntity;
+import ucles.weblab.common.files.domain.SecureFileMetadataEntity;
 import ucles.weblab.common.files.webapi.FileController;
 import ucles.weblab.common.files.webapi.resource.FileMetadataResource;
 
@@ -13,9 +14,9 @@ import static ucles.weblab.common.webapi.LinkRelation.PREVIEW;
 /**
 * @since 20/03/15
 */
-public class FileMetadataResourceAssembler implements ResourceAssembler<SecureFileEntity, FileMetadataResource> {
+public class FileMetadataResourceAssembler implements ResourceAssembler<SecureFileMetadataEntity, FileMetadataResource> {
     @Override
-    public FileMetadataResource toResource(SecureFileEntity entity) {
+    public FileMetadataResource toResource(SecureFileMetadataEntity entity) {
         FileMetadataResource resource = new FileMetadataResource(entity.getFilename(), entity.getContentType(), entity.getLength(), entity.getNotes());
         resource.add(linkTo(methodOn(FileController.class).getFileMetadata(entity.getCollection().getBucket(), entity.getFilename())).withSelfRel());
         resource.add(linkTo(methodOn(FileController.class).fetchFileContent(entity.getCollection().getBucket(), entity.getFilename())).withRel(PREVIEW.rel()));
