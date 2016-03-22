@@ -153,7 +153,7 @@ public class FileDownloadCacheS3 implements FileDownloadCache<UUID, PendingDownl
     
     @Override
     public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
-        return linkTo(methodOn(DownloadController.class).redirectToExternalUrl(collectionName, fileName, id)).toUri();
+        return getUrl(id, collectionName, fileName).orElse(null);
     }
 
     @Autowired(required = false) // will fall back to default system UTC clock

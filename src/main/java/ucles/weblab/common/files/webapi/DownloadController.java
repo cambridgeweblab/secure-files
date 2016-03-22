@@ -94,7 +94,7 @@ public class DownloadController {
      * @param id
      * @return 
      */
-    @RequestMapping(value = "/redirectfile/{collectionName}/{fileName}/{id}", 
+    /*@RequestMapping(value = "/redirectfile/{collectionName}/{fileName}/{id}", 
                     method = RequestMethod.GET)
     public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String collectionName, 
                                                         @PathVariable String fileName, 
@@ -114,6 +114,6 @@ public class DownloadController {
                 
         return new ResponseEntity<>(headers, HttpStatus.SEE_OTHER);
         
-    }    
+    }    */
     
 }
