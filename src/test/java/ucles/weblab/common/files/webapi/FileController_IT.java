@@ -113,7 +113,7 @@ public class FileController_IT extends AbstractRestController_IT {
 
         @Bean
         public EncryptionService encryptionService() {
-            return new EncryptionServiceImpl(Arrays.asList(new AesGcmEncryptionStrategy(), new DummyEncryptionStrategy()),
+            return new EncryptionServiceImpl(Arrays.asList(new AesGcmEncryptionStrategy("some-test-aad"), new DummyEncryptionStrategy()),
                     "0123456789012345".getBytes(UTF_8));
         }
 

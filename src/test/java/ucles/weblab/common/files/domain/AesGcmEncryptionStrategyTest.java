@@ -18,7 +18,7 @@ import javax.crypto.KeyGenerator;
 public class AesGcmEncryptionStrategyTest {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final AesGcmEncryptionStrategy aesGcmEncryptionStrategy = new AesGcmEncryptionStrategy();
+    private final AesGcmEncryptionStrategy aesGcmEncryptionStrategy = new AesGcmEncryptionStrategy("some-test-aad");
     private final byte[] randomSourceData = new byte[8192];
 
     private static final long SEED = 56275638975328L;

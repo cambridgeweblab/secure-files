@@ -22,6 +22,13 @@ public class AesGcmEncryptionStrategy implements EncryptionStrategy {
     private static final boolean JDK8_PLUS = System.getProperty("java.specification.version").compareTo("1.8") >= 0;
     private static final int GCM_TAG_BITS = 128;
 
+    /*Optional property string to update aad of the cipher */
+    private String aad;
+    
+    public AesGcmEncryptionStrategy(String aad) {
+        this.aad = aad;
+    }
+    
     static {
         // If we're on JDK < 8 then we need Bouncy Castle to implement AES-GCM. Otherwise it's built in.
         if (!JDK8_PLUS && Security.getProvider("BC") == null) {
@@ -45,7 +52,13 @@ public class AesGcmEncryptionStrategy implements EncryptionStrategy {
             final SecureRandom random = new SecureRandom();
             final byte iv[] = new byte[cipher.getBlockSize()];
             random.nextBytes(iv);
+            
+            
             cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), constructParamSpec(iv));
+            if (aad != null) {
+                cipher.updateAAD(aad.getBytes());
+            }
+            
             final byte[] buffer = new byte[cipher.getOutputSize(data.length)];
             final int outputSize = cipher.doFinal(data, 0, data.length, buffer);
             final byte[] encryptedData = new byte[iv.length + outputSize];
@@ -59,11 +72,15 @@ public class AesGcmEncryptionStrategy implements EncryptionStrategy {
 
     @Override
     @SuppressWarnings("UnnecessaryLocalVariable")
-    public byte[] decrypt(String cipherName, byte[] key, byte[] encryptedData) {
+    public byte[] decrypt(String cipherName, byte[] key, byte[]encryptedData) {
         try {
             Cipher cipher = createCipher();
             final int blockSize = cipher.getBlockSize();
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), constructParamSpec(encryptedData, blockSize));
+            
+            if (aad != null) {
+                cipher.updateAAD(aad.getBytes());
+            }
             byte[] decrypted = cipher.doFinal(encryptedData, blockSize, encryptedData.length - blockSize);
             return decrypted;
         } catch (GeneralSecurityException e) {
