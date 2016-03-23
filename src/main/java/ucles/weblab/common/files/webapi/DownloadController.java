@@ -85,35 +85,6 @@ public class DownloadController {
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
         headers.setLocation(toUri);        
         return new ResponseEntity<>(pendingDownload.getContent(), headers, HttpStatus.OK);
-    }
-    
-    /**
-     * This method is responsible for displaying a file (in the browser) of an external file
-     * @param collectionName
-     * @param fileName
-     * @param id
-     * @return 
-     */
-    /*@RequestMapping(value = "/redirectfile/{collectionName}/{fileName}/{id}", 
-                    method = RequestMethod.GET)
-    public ResponseEntity<Object> redirectToExternalUrl(@PathVariable String collectionName, 
-                                                        @PathVariable String fileName, 
-                                                        @PathVariable UUID id) {
-        
-        HttpHeaders headers = new HttpHeaders();
-        // The important thing is to avoid no-cache and no-store, for IE.
-        headers.setCacheControl("private, max-age=300"); 
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + '"');
-        Optional<URI> url = recentDownloadCache.getUrl(id, collectionName, fileName);
-        URI location = null;
-        if (url.isPresent()) {
-            location = url.get();
-        }
-        log.info("Setting location to save from as: " + location);
-        headers.setLocation(location);
-                
-        return new ResponseEntity<>(headers, HttpStatus.SEE_OTHER);
-        
-    }    */
+    }        
     
 }
