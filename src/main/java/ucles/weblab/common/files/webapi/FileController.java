@@ -41,8 +41,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +76,7 @@ public class FileController {
     private final FileDownloadCache<UUID, PendingDownload> downloadCache;
     private Clock clock = Clock.systemUTC();
         
-    private final ReentrantLock lock1 = new ReentrantLock();
+    private final Object mutex = new Object();
     
     private static class DecryptionFailedException extends NestedRuntimeException {
         public DecryptionFailedException(Exception e) {
@@ -264,21 +262,16 @@ public class FileController {
         URI location = null;
         Optional<PendingDownload> fileOpt = Optional.empty();
         
-        //attempt to get a lock
-        try {
-            if (lock1.tryLock(30, TimeUnit.SECONDS)) {
-
-                log.info(Thread.currentThread().getName() + " thread is getting {} from cache", filename);
-                fileOpt = downloadCache.get(id, bucket, filename);
-                if (fileOpt.isPresent()) {
-                    log.info(Thread.currentThread().getName() + " thread found {} in cache", filename);
-                    //if it's there, then set the location 
-                    location = fileOpt.get().getUrl();
-                }
-
-            }
-            if (location == null){
-                                                                          
+        synchronized (mutex) {
+            //one thread at a time                
+            log.info(Thread.currentThread().getName() + " thread is getting {} from cache", filename);
+            fileOpt = downloadCache.get(id, bucket, filename);
+        
+            if (fileOpt.isPresent()) {
+                log.info(Thread.currentThread().getName() + " thread found {} in cache", filename);
+                //if it's there, then set the location 
+                location = fileOpt.get().getUrl();                
+            } else {                                       
                 log.info(Thread.currentThread().getName() + " thread not found {} in cache, going to database", filename);
                 //this should only be done ONCE no matter how many first threads.
                 Optional<URI> optReturn  = getLocation(id, bucket, collection, filename);
@@ -288,16 +281,10 @@ public class FileController {
                     log.info("{} not found in repository, returning 404", filename);
                     //it's not in the cache nor the repository
                     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                }                                  
-                
+                }                  
             }
-        } catch(InterruptedException e) {
-            log.warn("InterruptedException, ignoring");
-        }  
-        finally {
-            lock1.unlock();
         }
-            
+
         if (location != null) {
             log.info("Location was found, setting headers");
             HttpHeaders headers = new HttpHeaders();
@@ -310,6 +297,8 @@ public class FileController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
+
+        
     }
     
     /**
@@ -320,7 +309,7 @@ public class FileController {
      * @param filename - the file to get
      * @return 
      */
-    private Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename) {
+    private synchronized Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename) {
         final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
             
         //if there is a filename 
