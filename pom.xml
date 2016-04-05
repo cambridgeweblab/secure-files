@@ -5,7 +5,7 @@
     <parent>
         <artifactId>weblab-common-java</artifactId>
         <groupId>ucles.weblab</groupId>
-        <version>0.1-SNAPSHOT</version>
+        <version>0.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
