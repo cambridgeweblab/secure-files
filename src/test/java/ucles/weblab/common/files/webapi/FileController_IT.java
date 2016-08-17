@@ -39,7 +39,7 @@ import ucles.weblab.common.files.domain.jpa.SecureFileEntityJpa;
 import ucles.weblab.common.files.webapi.converter.FilesConverters;
 import ucles.weblab.common.files.webapi.resource.FileCollectionResource;
 import ucles.weblab.common.test.webapi.AbstractRestController_IT;
-import ucles.weblab.common.webapi.multipart.jersey.JerseyMultipartResolver;
+import ucles.weblab.common.multipart.webapi.jersey.JerseyMultipartResolver;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
