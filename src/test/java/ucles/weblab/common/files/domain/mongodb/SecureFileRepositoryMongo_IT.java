@@ -40,6 +40,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.contains;
@@ -55,8 +57,8 @@ import static org.junit.Assert.assertThat;
  * @since 18/03/15
  */
 @Ignore("MongoDB not available in the environment") // TODO: make this detectable
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration
+@RunWith(SpringRunner.class)
+@SpringBootTest
 @Transactional
 public class SecureFileRepositoryMongo_IT {
     private static final String FILE_RESOURCE_PATH = "81672667_bus.jpg";
