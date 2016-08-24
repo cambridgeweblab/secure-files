@@ -41,7 +41,13 @@ import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.blob.api.BlobStoreService;
 
 /**
- *
+ * An amazon s3 implementation of the BlobStoreService. 
+ * This service assumes there is a bucket created with the name {namespace}-{accountid}
+ * in lower case. 
+ * 
+ * The root path represents the file structure under that bucket. So if it is file1/file2, 
+ * then file1 folder exists under the bucket, in file1, there is a s3 directory called file2. 
+ * 
  * @author Sukhraj
  */
 public class BlobStoreServiceS3 implements BlobStoreService {
@@ -60,7 +66,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     private final String s3Region;
     
     /**
-     * 
+     * Initialise this service
      * @param awsCredentials
      * @param accountId
      * @param s3region - EU for other aws region 
@@ -83,42 +89,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                 new AmazonS3Client(new DefaultAWSCredentialsProviderChain(), new WeblabClientConfiguration(true, 5));
         
         this.rootPath = rootPath;        
-        this.s3Region = s3region;
-        
-        String bucketPolicyText = "{\"Version\":\"2012-10-17\", \"Statement\":[{\"Sid\":\"AddPerm\",\"Effect\":\"Allow\",\"Principal\": \"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::" + bucketName + "/*\"]}]}";
-        log.info("Using the policy for: " + bucketPolicyText);
-        //bucket names must be globally unique
-        // 'us-east-1' region is returned as "US"
-        try {
-            
-            String currentLocation = this.s3.getBucketLocation(bucketName);
-            if (currentLocation == null || !currentLocation.equals(s3region)) {
-                log.warn("Bucket exists in a different region[" + currentLocation + "] to that specified[" + s3region + "]");
-            }
-            else {
-                log.info("Using Bucket {} in region {}.", bucketName, s3region);
-            }
-        } catch (AmazonS3Exception e) {
-            if (e.getStatusCode() == 404) {
-                log.info("Creating bucket {} for region {}", bucketName, s3region);
-                Bucket bucket = this.s3.createBucket(bucketName, s3region);
-                SetBucketPolicyRequest policyRequest = new SetBucketPolicyRequest(bucketName, bucketPolicyText);
-                s3.setBucketPolicy(policyRequest);
-                
-                /*if (US_EAST_REGION.equals(s3region))
-                {
-                    this.s3.createBucket(bucketName);
-                }
-                else
-                {
-                    this.s3.createBucket(bucketName, s3region);
-                }*/
-            }
-            else {
-                throw new IllegalArgumentException("Could not create bucket " + bucketName + " in region " + s3region, e);
-            }
-        }
-        
+        this.s3Region = s3region;        
     }
     
     @Override
