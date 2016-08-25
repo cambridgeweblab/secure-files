@@ -23,6 +23,8 @@ import static org.mockito.Mockito.when;
 public class AutoPurgeSecureFileCollectionServiceImplTest {
     @Mock
     SecureFileCollectionRepository secureFileCollectionRepository;
+    @Mock
+    SecureFileRepository secureFileRepository;
 
     @InjectMocks
     private AutoPurgeSecureFileCollectionServiceImpl secureFileCollectionService;
@@ -31,6 +33,7 @@ public class AutoPurgeSecureFileCollectionServiceImplTest {
     public void testPurge() throws ExecutionException, InterruptedException {
         final Instant now = Instant.now();
         Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        when(secureFileRepository.deleteByCollectionPurgeInstantBefore(now)).thenReturn(40);
         when(secureFileCollectionRepository.removeByPurgeInstantBefore(now)).thenReturn(4L);
 
         secureFileCollectionService.configureClock(clock);

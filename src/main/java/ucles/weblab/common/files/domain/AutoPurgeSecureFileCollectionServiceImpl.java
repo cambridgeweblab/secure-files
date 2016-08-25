@@ -22,11 +22,13 @@ public class AutoPurgeSecureFileCollectionServiceImpl implements SecureFileColle
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private Clock clock = Clock.systemUTC();
 
-    public AutoPurgeSecureFileCollectionServiceImpl(SecureFileCollectionRepository secureFileCollectionRepository) {
-        this.secureFileCollectionRepository = secureFileCollectionRepository;
-    }
-
     private final SecureFileCollectionRepository secureFileCollectionRepository;
+    private final SecureFileRepository secureFileRepository;
+
+    public AutoPurgeSecureFileCollectionServiceImpl(SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository) {
+        this.secureFileCollectionRepository = secureFileCollectionRepository;
+        this.secureFileRepository = secureFileRepository;
+    }
 
     @Autowired(required = false) // will fall back to default system UTC clock
     void configureClock(Clock clock) {
@@ -45,9 +47,11 @@ public class AutoPurgeSecureFileCollectionServiceImpl implements SecureFileColle
 
     public Future<Long> purgeRepository() {
         logger.info("Purging secure file collections…");
-        final Long count = secureFileCollectionRepository.removeByPurgeInstantBefore(Instant.now(clock));
+        Instant now = Instant.now(clock);
+        final Integer fileCount = secureFileRepository.deleteByCollectionPurgeInstantBefore(now);
+        final Long count = secureFileCollectionRepository.removeByPurgeInstantBefore(now);
 
-        logger.debug("Purged files - " + count + " secure file collections purged.");
+        logger.debug("Purged files - {} secure file collections purged containing {} files.", count, fileCount);
 
         logger.info("Finished purging secure file collections.");
         return new AsyncResult<>(count);

@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.domain.s3;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,5 +40,10 @@ public class SecureFileRepositoryS3 implements SecureFileRepository {
     public void delete(SecureFileEntity file) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
+    @Override
+    public Integer deleteByCollectionPurgeInstantBefore(Instant cutOff) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

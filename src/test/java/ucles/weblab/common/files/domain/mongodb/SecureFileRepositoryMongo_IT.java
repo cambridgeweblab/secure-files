@@ -84,8 +84,8 @@ public class SecureFileRepositoryMongo_IT {
         }
 
         @Bean
-        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository) {
-            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository);
+        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository) {
+            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository, secureFileRepository);
         }
     }
 

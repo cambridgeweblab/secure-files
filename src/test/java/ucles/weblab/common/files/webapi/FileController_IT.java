@@ -24,15 +24,7 @@ import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.util.NestedServletException;
 import ucles.weblab.common.domain.ConfigurableEntitySupport;
-import ucles.weblab.common.files.domain.AesGcmEncryptionStrategy;
-import ucles.weblab.common.files.domain.AutoPurgeSecureFileCollectionServiceImpl;
-import ucles.weblab.common.files.domain.DummyEncryptionStrategy;
-import ucles.weblab.common.files.domain.EncryptionService;
-import ucles.weblab.common.files.domain.EncryptionServiceImpl;
-import ucles.weblab.common.files.domain.FilesBuilders;
-import ucles.weblab.common.files.domain.FilesFactory;
-import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
-import ucles.weblab.common.files.domain.SecureFileCollectionService;
+import ucles.weblab.common.files.domain.*;
 import ucles.weblab.common.files.domain.jpa.FilesFactoryJpa;
 import ucles.weblab.common.files.domain.jpa.SecureFileCollectionRepositoryJpa;
 import ucles.weblab.common.files.domain.jpa.SecureFileEntityJpa;
@@ -118,8 +110,8 @@ public class FileController_IT extends AbstractRestController_IT {
         }
 
         @Bean
-        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository) {
-            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository);
+        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository) {
+            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository, secureFileRepository);
         }
 
         /**

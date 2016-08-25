@@ -19,19 +19,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import ucles.weblab.common.domain.ConfigurableEntitySupport;
-import ucles.weblab.common.files.domain.AesGcmEncryptionStrategy;
-import ucles.weblab.common.files.domain.AutoPurgeSecureFileCollectionServiceImpl;
-import ucles.weblab.common.files.domain.DummyEncryptionStrategy;
-import ucles.weblab.common.files.domain.EncryptionService;
-import ucles.weblab.common.files.domain.EncryptionServiceImpl;
-import ucles.weblab.common.files.domain.FilesBuilders;
-import ucles.weblab.common.files.domain.FilesFactory;
-import ucles.weblab.common.files.domain.SecureFile;
-import ucles.weblab.common.files.domain.SecureFileCollection;
-import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
-import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
-import ucles.weblab.common.files.domain.SecureFileCollectionService;
-import ucles.weblab.common.files.domain.SecureFileEntity;
+import ucles.weblab.common.files.domain.*;
 import ucles.weblab.common.files.webapi.converter.FilesConverters;
 
 import java.io.IOException;
@@ -76,8 +64,8 @@ public class SecureFileMetadataRepositoryJpa_IT {
         }
 
         @Bean
-        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository) {
-            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository);
+        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository) {
+            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository, secureFileRepository);
         }
     }
 

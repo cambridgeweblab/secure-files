@@ -194,8 +194,8 @@ Configuration
 ``` 
 * The default maximum file upload size should be configured in application properties, e.g.:
 ```
-    multipart.maxFileSize=262144
-    multipart.maxRequestSize=300000
+    spring.http.multipart.maxFileSize=262144
+    spring.http.multipart.maxRequestSize=300000
 ```
 * The 16-byte encryption key must be configured with the application property:
 ```

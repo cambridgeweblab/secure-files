@@ -16,6 +16,7 @@ import ucles.weblab.common.files.domain.SecureFileEntity;
 import ucles.weblab.common.files.domain.SecureFileRepository;
 
 import java.io.ByteArrayInputStream;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -111,5 +112,10 @@ public class SecureFileRepositoryMongo implements SecureFileRepository {
             gridFS.remove(file.getFilename());
             return null;
         });
+    }
+
+    @Override
+    public Integer deleteByCollectionPurgeInstantBefore(Instant cutOff) {
+        throw new UnsupportedOperationException("Purging not yet implemented for MongoDB.");
     }
 }

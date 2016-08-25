@@ -17,22 +17,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import ucles.weblab.common.domain.ConfigurableEntitySupport;
-import ucles.weblab.common.files.domain.AesGcmEncryptionStrategy;
-import ucles.weblab.common.files.domain.AutoPurgeSecureFileCollectionServiceImpl;
-import ucles.weblab.common.files.domain.DummyEncryptionStrategy;
-import ucles.weblab.common.files.domain.EncryptionService;
-import ucles.weblab.common.files.domain.EncryptionServiceImpl;
-import ucles.weblab.common.files.domain.FilesBuilders;
-import ucles.weblab.common.files.domain.FilesFactory;
-import ucles.weblab.common.files.domain.SecureFile;
-import ucles.weblab.common.files.domain.SecureFileCollection;
-import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
-import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
-import ucles.weblab.common.files.domain.SecureFileCollectionService;
-import ucles.weblab.common.files.domain.SecureFileEntity;
+import ucles.weblab.common.files.domain.*;
 import ucles.weblab.common.files.webapi.converter.FilesConverters;
 
 import java.io.IOException;
@@ -67,6 +56,7 @@ import static org.junit.Assume.assumeNotNull;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration
 @Transactional
+@TestPropertySource(properties = "spring.jpa.show-sql=true")
 public class SecureFileRepositoryJpa_IT {
     private static final String FILE_RESOURCE_PATH = "81672667_bus.jpg";
 
@@ -87,8 +77,8 @@ public class SecureFileRepositoryJpa_IT {
         }
 
         @Bean
-        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository) {
-            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository);
+        public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository) {
+            return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository, secureFileRepository);
         }
     }
 
@@ -204,7 +194,7 @@ public class SecureFileRepositoryJpa_IT {
         entityManager.clear();
 
         final Future<Long> count = secureFileCollectionService.purgeRepository();
-        assertEquals("Expect 1 file removed", (Long) 1L, count.get());
+        assertEquals("Expect 1 collection removed", (Long) 1L, count.get());
         entityManager.flush();
         entityManager.clear();
 

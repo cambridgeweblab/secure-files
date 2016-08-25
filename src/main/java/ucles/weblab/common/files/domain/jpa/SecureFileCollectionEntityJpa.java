@@ -42,7 +42,7 @@ public class SecureFileCollectionEntityJpa implements Persistable<String>, Secur
 
     private Instant purgeInstant;
 
-    @OneToMany(mappedBy = SecureFileEntityJpa.COLLECTION, cascade = {CascadeType.REMOVE})
+    @OneToMany(mappedBy = SecureFileEntityJpa.COLLECTION)
     @Fetch(FetchMode.SUBSELECT)
     private List<SecureFileEntityJpa> files = new ArrayList<>();
 

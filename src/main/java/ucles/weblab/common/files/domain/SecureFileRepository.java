@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.domain;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -24,4 +25,6 @@ public interface SecureFileRepository {
     Collection<? extends SecureFileEntity> findAllByCollection(SecureFileCollectionEntity collection);
 
     void delete(SecureFileEntity file);
+
+    Integer deleteByCollectionPurgeInstantBefore(Instant cutOff);
 }
