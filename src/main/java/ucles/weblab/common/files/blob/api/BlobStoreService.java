@@ -113,4 +113,10 @@ public interface BlobStoreService {
      * @throws BlobNotFoundException 
      */
     public List<Blob> listBlobs(boolean includeContent) throws BlobStoreException, BlobNotFoundException;
+    
+    /**
+     * Expose the root folder
+     * @return 
+     */
+    public String getBucketName();
 }

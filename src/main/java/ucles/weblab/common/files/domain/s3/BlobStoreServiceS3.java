@@ -353,5 +353,10 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             
         return res;
     }
+
+    @Override
+    public String getBucketName() {
+        return bucketName;
+    }
     
 }

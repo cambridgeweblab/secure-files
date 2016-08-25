@@ -43,12 +43,14 @@ public class S3HealthCheckIndicator implements HealthIndicator{
             GetBucketLocationRequest request = new GetBucketLocationRequest(bucketName);
             //get the bucket location to test if connection works
             currentLocation = s3Client.getBucketLocation(request);
+            
         } catch (AmazonClientException a) {
             
             log.warn("{} caught while getting bucket location for: {}", a.getClass().getSimpleName(), bucketName, a);
             return Health.down().withDetail("Amazon S3 Request Exception", a.getMessage()).build();
         }
         //return up if we get here
+        log.info("Returning successfully from S3 health check indicator");
         return Health.up().build();
     }
     
