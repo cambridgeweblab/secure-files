@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import ucles.weblab.common.files.blob.api.BlobId;
 import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFileMetadata;
@@ -28,6 +29,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
  * @author sukhraj (taken from code from DownloadController with was originally 
  * written by gboden.
  */
+@Component
 public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, PendingDownload> {
     
     private final Logger log = LoggerFactory.getLogger(getClass());
