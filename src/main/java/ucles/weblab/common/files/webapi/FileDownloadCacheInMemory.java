@@ -29,7 +29,6 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
  * @author sukhraj (taken from code from DownloadController with was originally 
  * written by gboden.
  */
-@Component
 public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, PendingDownload> {
     
     private final Logger log = LoggerFactory.getLogger(getClass());
