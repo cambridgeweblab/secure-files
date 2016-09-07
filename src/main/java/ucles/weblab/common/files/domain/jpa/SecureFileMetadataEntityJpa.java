@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.domain.jpa;
 
+import java.time.Instant;
 import org.hibernate.annotations.Immutable;
 import ucles.weblab.common.files.domain.SecureFileMetadataEntity;
 
@@ -34,6 +35,8 @@ public class SecureFileMetadataEntityJpa implements SecureFileMetadataEntity {
 
     private String notes;
 
+    private Instant createdDate;
+    
     protected SecureFileMetadataEntityJpa() {
          // For Hibernate and Jackson
     }
@@ -42,24 +45,34 @@ public class SecureFileMetadataEntityJpa implements SecureFileMetadataEntity {
         return id;
     }
 
+    @Override
     public SecureFileCollectionEntityJpa getCollection() {
         return collection;
     }
 
+    @Override
     public String getFilename() {
         return filename;
     }
 
+    @Override
     public String getContentType() {
         return contentType;
     }
 
+    @Override
     public long getLength() {
         return length;
     }
 
+    @Override
     public String getNotes() {
         return notes;
+    }
+    
+    @Override
+    public Instant getCreatedDate() {
+        return createdDate;
     }
 
     @Override

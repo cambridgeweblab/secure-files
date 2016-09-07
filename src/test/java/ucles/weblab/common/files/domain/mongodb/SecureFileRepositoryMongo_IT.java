@@ -166,6 +166,11 @@ public class SecureFileRepositoryMongo_IT {
                 public byte[] getPlainData() {
                     return originalData;
                 }
+                
+                @Override
+                public Instant getCreatedDate() {
+                    return Instant.now();
+                }
             });
     }
 

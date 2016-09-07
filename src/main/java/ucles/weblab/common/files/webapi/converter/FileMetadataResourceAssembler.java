@@ -17,7 +17,7 @@ import static ucles.weblab.common.webapi.LinkRelation.PREVIEW;
 public class FileMetadataResourceAssembler implements ResourceAssembler<SecureFileMetadataEntity, FileMetadataResource> {
     @Override
     public FileMetadataResource toResource(SecureFileMetadataEntity entity) {
-        FileMetadataResource resource = new FileMetadataResource(entity.getFilename(), entity.getContentType(), entity.getLength(), entity.getNotes());
+        FileMetadataResource resource = new FileMetadataResource(entity.getFilename(), entity.getContentType(), entity.getLength(), entity.getNotes(), entity.getCreatedDate());
         resource.add(linkTo(methodOn(FileController.class).getFileMetadata(entity.getCollection().getBucket(), entity.getFilename())).withSelfRel());
         resource.add(linkTo(methodOn(FileController.class).fetchFileContent(entity.getCollection().getBucket(), entity.getFilename())).withRel(PREVIEW.rel()));
         resource.add(linkTo(methodOn(FileController.class).generateDownloadLink(entity.getCollection().getBucket(), entity.getFilename())).withRel(ENCLOSURE.rel()));

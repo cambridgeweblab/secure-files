@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.domain.mongodb;
 
+import java.time.Instant;
 import ucles.weblab.common.files.domain.FilesFactory;
 import ucles.weblab.common.files.domain.SecureFile;
 import ucles.weblab.common.files.domain.SecureFileCollection;
@@ -69,6 +70,11 @@ public class FilesFactoryMongo implements FilesFactory {
         @Override
         public byte[] getPlainData() {
             return file.getPlainData();
+        }
+        
+        @Override
+        public Instant getCreatedDate() {
+            return file.getCreatedDate();
         }
 
         @Override

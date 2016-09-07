@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.domain;
 
+import java.time.Instant;
 import ucles.weblab.common.domain.Buildable;
 
 /**
@@ -16,5 +17,6 @@ public interface SecureFile extends Buildable<SecureFile>, SecureFileMetadata {
         Builder length(long length);
         Builder notes(String notes);
         Builder plainData(byte[] plainData);
+        Builder createdDate(Instant createdDate);
     }
 }

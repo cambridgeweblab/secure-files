@@ -10,6 +10,7 @@ import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.common.files.domain.SecureFileEntity;
 
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -74,6 +75,8 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
     @Transient
     private String defaultCipherName;
 
+    private Instant createdDate;
+    
     protected SecureFileEntityJpa() {
          // For Hibernate and Jackson
     }
@@ -88,6 +91,7 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
         this.notes = vo.getNotes();
         this.cipher = defaultCipherName;
         this.encryptedData = encryptionService.encrypt(this.cipher, getFileKey(), vo.getPlainData());
+        this.createdDate =  Instant.now();
     }
 
     @Autowired
@@ -168,6 +172,11 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
         return encryptionService.decrypt(cipher, getFileKey(), encryptedData);
     }
 
+    @Override
+    public Instant getCreatedDate() {
+        return this.createdDate;
+    }
+    
     /**
      * Unique key for the file.
      * To be combined with a system-wide secret key to decrypt or encrypt the file.

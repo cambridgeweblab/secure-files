@@ -166,13 +166,18 @@ public class DownloadControllerTest {
         private String notes;   
         private int length;
         private byte[] data;
-
+        
         public SecureFileTestVO(String contentType, String fileName, String notes, int length, byte[] data) {
             this.contentType = contentType;
             this.fileName = fileName;
             this.notes = notes;
             this.length = length;
             this.data = data;
+        }
+        
+        @Override
+        public Instant getCreatedDate() {
+            return Instant.now();
         }
         
         @Override

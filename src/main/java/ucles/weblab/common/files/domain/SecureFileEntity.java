@@ -1,5 +1,7 @@
 package ucles.weblab.common.files.domain;
 
+import java.time.Instant;
+
 /**
  * Persistence-technology-neutral interface representing a persistable secure file in a collection.
  *
@@ -9,4 +11,6 @@ public interface SecureFileEntity extends MutableSecureFile, SecureFileMetadataE
     SecureFileCollectionEntity getCollection();
 
     boolean isNew();
+    
+    Instant getCreatedDate();
 }

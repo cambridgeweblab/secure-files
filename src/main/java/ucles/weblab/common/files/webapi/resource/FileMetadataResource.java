@@ -1,5 +1,6 @@
 package ucles.weblab.common.files.webapi.resource;
 
+import java.time.Instant;
 import org.springframework.hateoas.ResourceSupport;
 
 /**
@@ -12,6 +13,7 @@ public class FileMetadataResource extends ResourceSupport {
     private String contentType;
     private long length;
     private String notes;
+    private Instant createdDate;
 
     /**
      * Empty constructor used by Jackson.
@@ -19,11 +21,12 @@ public class FileMetadataResource extends ResourceSupport {
     protected FileMetadataResource() {
     }
 
-    public FileMetadataResource(String filename, String contentType, long length, String notes) {
+    public FileMetadataResource(String filename, String contentType, long length, String notes, Instant createdDate) {
         this.filename = filename;
         this.contentType = contentType;
         this.length = length;
         this.notes = notes;
+        this.createdDate = createdDate;
     }
 
     public String getFilename() {
@@ -40,5 +43,9 @@ public class FileMetadataResource extends ResourceSupport {
 
     public long getLength() {
         return length;
+    }
+    
+    public Instant getCreatedDate() {
+        return createdDate;
     }
 }

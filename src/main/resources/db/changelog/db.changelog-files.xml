@@ -48,4 +48,11 @@
             <column name="notes" type="TEXT"/>
         </addColumn>
     </changeSet>
+    
+    <changeSet id="add-created-date-to-secure_files" author="srattan">
+        <addColumn tableName="secure_files">
+            <column name="created_date" type="DATETIME"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

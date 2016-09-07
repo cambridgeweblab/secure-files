@@ -10,6 +10,7 @@ import ucles.weblab.common.files.domain.SecureFileEntity;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Objects;
 
 import static ucles.weblab.common.domain.ConfigurableEntitySupport.configureBean;
@@ -49,7 +50,9 @@ public class SecureFileEntityMongo implements SecureFileEntity {
      */
     private byte[] fileKey;
     private byte[] encryptedData;
-
+    
+    private Instant createdDate;
+    
     private EncryptionService encryptionService;
 
     @SuppressWarnings("UnusedDeclaration") // for testing
@@ -144,6 +147,11 @@ public class SecureFileEntityMongo implements SecureFileEntity {
     }
 
     @Override
+    public Instant getCreatedDate() {
+        return this.createdDate;
+    }
+    
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -167,5 +175,5 @@ public class SecureFileEntityMongo implements SecureFileEntity {
                 ", contentType='" + contentType + '\'' +
                 ", length=" + length +
                 '}';
-    }
+    }    
 }

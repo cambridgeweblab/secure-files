@@ -132,7 +132,7 @@ public class FileControllerTest {
         final SecureFileCollectionEntity collection = mockSecureFileCollection(collectionName, Optional.empty());
         final SecureFileEntity fileToSave = mockSecureFile(file);
         final SecureFileEntity savedFile = mockSecureFile(file);
-        final FileMetadataResource resource = new FileMetadataResource(file.getOriginalFilename(), file.getContentType(), file.getSize(), notes);
+        final FileMetadataResource resource = new FileMetadataResource(file.getOriginalFilename(), file.getContentType(), file.getSize(), notes, Instant.now());
         resource.add(new Link("urn:virens").withSelfRel());
 
         when(mockSecureFileCollectionRepository.findOneByDisplayName(collectionName)).thenReturn(collection);
@@ -218,8 +218,8 @@ public class FileControllerTest {
         SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         SecureFileEntity file1 = mock(SecureFileEntity.class);
         SecureFileEntity file2 = mock(SecureFileEntity.class);
-        FileMetadataResource resource1 = new FileMetadataResource("file1", "text/pdf", 4214533L, null);
-        FileMetadataResource resource2 = new FileMetadataResource("file2", "audio/x-mp3", 3279131L, null);
+        FileMetadataResource resource1 = new FileMetadataResource("file1", "text/pdf", 4214533L, null, Instant.now());
+        FileMetadataResource resource2 = new FileMetadataResource("file2", "audio/x-mp3", 3279131L, null, Instant.now());
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileMetadataRepository.findAllByCollection(collection)).thenReturn((Collection) Arrays.asList(file1, file2));
@@ -245,7 +245,7 @@ public class FileControllerTest {
         final String filename = "Apologies";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final SecureFileEntity file = mock(SecureFileEntity.class);
-        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null);
+        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null, Instant.now());
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileMetadataRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
@@ -301,8 +301,8 @@ public class FileControllerTest {
         final String filename = "Apologies";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final SecureFileEntity file = mock(SecureFileEntity.class);
-        final FileMetadataResource update = new FileMetadataResource(null, "text/pdf", 0L, null);
-        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null);
+        final FileMetadataResource update = new FileMetadataResource(null, "text/pdf", 0L, null, Instant.now());
+        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null, Instant.now());
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
@@ -322,8 +322,8 @@ public class FileControllerTest {
         final String filename = "Apologies";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final SecureFileEntity file = mock(SecureFileEntity.class);
-        final FileMetadataResource update = new FileMetadataResource(filename, null, 0L, null);
-        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null);
+        final FileMetadataResource update = new FileMetadataResource(filename, null, 0L, null, Instant.now());
+        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null, Instant.now());
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
@@ -343,8 +343,8 @@ public class FileControllerTest {
         final String filename = "Apologies";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final SecureFileEntity file = mock(SecureFileEntity.class);
-        final FileMetadataResource update = new FileMetadataResource(null, null, 0L, "waste of time");
-        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null);
+        final FileMetadataResource update = new FileMetadataResource(null, null, 0L, "waste of time", Instant.now());
+        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null, Instant.now());
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
@@ -365,8 +365,8 @@ public class FileControllerTest {
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final SecureFileEntity file = mock(SecureFileEntity.class);
         final SecureFileEntity savedFile = mock(SecureFileEntity.class);
-        final FileMetadataResource update = new FileMetadataResource(filename, "text/pdf", 0L, "waste of time");
-        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null);
+        final FileMetadataResource update = new FileMetadataResource(filename, "text/pdf", 0L, "waste of time", Instant.now());
+        final FileMetadataResource resource = new FileMetadataResource(filename, "text/pdf", 42164233L, null, Instant.now());
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
