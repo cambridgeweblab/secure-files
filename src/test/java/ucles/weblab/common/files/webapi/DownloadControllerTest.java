@@ -226,6 +226,11 @@ public class DownloadControllerTest {
         }
 
         @Override
+        public byte[] getEncryptedData() {
+            return data;
+        }
+
+        @Override
         public byte[] getPlainData() {
             return data;
         }

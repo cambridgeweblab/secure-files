@@ -163,7 +163,8 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
         return collection;
     }
 
-    byte[] getEncryptedData() {
+    @Override
+    public byte[] getEncryptedData() {
         return encryptedData;
     }
 

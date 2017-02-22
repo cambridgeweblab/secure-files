@@ -11,6 +11,8 @@ import ucles.weblab.common.domain.Buildable;
 public interface SecureFile extends Buildable<SecureFile>, SecureFileMetadata {
     byte[] getPlainData();
 
+    byte[] getEncryptedData();
+
     interface Builder extends Buildable.Builder<SecureFile> {
         Builder filename(String filename);
         Builder contentType(String contentType);

@@ -274,7 +274,7 @@ public class FileController {
             } else {                                       
                 log.info(Thread.currentThread().getName() + " thread not found {} in cache, going to database", filename);
                 //this should only be done ONCE no matter how many first threads.
-                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename);
+                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename, false);
                 if (optReturn.isPresent()) {
                     location = optReturn.get();                    
                 } else {
@@ -297,6 +297,67 @@ public class FileController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
+    }
+
+    /**
+     * The first point of call when the user clicks on the download.
+     * @param bucket
+     * @param filename
+     * @return
+     */
+    @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/",
+            method = RequestMethod.POST,
+            produces = APPLICATION_JSON_UTF8_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    @AccessAudited
+    public ResponseEntity<ResourceSupport> generateEncryptedDownloadLink(@PathVariable String bucket,
+                                                                @PathVariable String filename ) {
+
+        //get the collection name
+        final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
+        if (collection == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        //always create a random id, first time round
+        UUID id = UUID.randomUUID();
+        URI location = null;
+        Optional<PendingDownload> fileOpt = Optional.empty();
+
+        synchronized (mutex) {
+            //one thread at a time
+            log.info(Thread.currentThread().getName() + " thread is getting {} from cache", filename);
+            fileOpt = downloadCache.get(id, bucket, filename);
+
+            if (fileOpt.isPresent()) {
+                log.info(Thread.currentThread().getName() + " thread found {} in cache", filename);
+                //if it's there, then set the location
+                location = fileOpt.get().getUrl();
+            } else {
+                log.info(Thread.currentThread().getName() + " thread not found {} in cache, going to database", filename);
+                //this should only be done ONCE no matter how many first threads.
+                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename, true);
+                if (optReturn.isPresent()) {
+                    location = optReturn.get();
+                } else {
+                    log.info("{} not found in repository, returning 404", filename);
+                    //it's not in the cache nor the repository
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                }
+            }
+        }
+
+        if (location != null) {
+            log.info("Location was found, setting headers");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setLocation(location);
+            final ResourceSupport resource = new ResourceSupport();
+            resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
+            return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
+        } else {
+            log.info("Location was never found, returning 404");
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
 
         
     }
@@ -307,9 +368,10 @@ public class FileController {
      * @param bucket - the collection name
      * @param collection - the collection itself
      * @param filename - the file to get
+     * @param isEncrypted - whether or not to return encrypted file data
      * @return 
      */
-    private synchronized Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename) {
+    private synchronized Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename, boolean isEncrypted) {
         final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
             
         //if there is a filename 
@@ -323,8 +385,8 @@ public class FileController {
 
             //create PendingDownload to put in the cache
             PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()), 
-                                                     secureFile.getFilename(), 
-                                                     secureFile.getPlainData(), 
+                                                     secureFile.getFilename(),
+                                                     isEncrypted ? secureFile.getEncryptedData() : secureFile.getPlainData(),
                                                      Instant.now(clock).plus(this.downloadCache.getExpiry()), 
                                                      res.isPresent() ? res.get() : null);
             //put it in the cache

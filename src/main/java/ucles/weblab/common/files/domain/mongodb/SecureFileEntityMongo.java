@@ -137,7 +137,8 @@ public class SecureFileEntityMongo implements SecureFileEntity {
         this.notes = notes;
     }
 
-    byte[] getEncryptedData() {
+    @Override
+    public byte[] getEncryptedData() {
         return encryptedData;
     }
 

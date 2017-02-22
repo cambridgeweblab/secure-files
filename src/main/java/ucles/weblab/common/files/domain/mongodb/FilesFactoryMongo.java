@@ -68,6 +68,9 @@ public class FilesFactoryMongo implements FilesFactory {
         }
 
         @Override
+        public byte[] getEncryptedData() { return file.getEncryptedData(); }
+
+        @Override
         public byte[] getPlainData() {
             return file.getPlainData();
         }

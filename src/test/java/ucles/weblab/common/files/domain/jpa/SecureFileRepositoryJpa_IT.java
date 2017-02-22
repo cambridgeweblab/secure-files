@@ -162,6 +162,9 @@ public class SecureFileRepositoryJpa_IT {
                 }
 
                 @Override
+                public byte[] getEncryptedData() { return originalData; }
+
+                @Override
                 public byte[] getPlainData() {
                     return originalData;
                 }
