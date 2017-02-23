@@ -238,6 +238,45 @@ public class FileController {
         }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/", method = RequestMethod.GET)
+    @PreAuthorize("isAuthenticated()")
+    @AccessAudited
+    public ResponseEntity<ResourceSupport> redirectToDownloadEncrypted(@PathVariable String bucket, @PathVariable String filename) {
+        final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
+        if (collection == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
+        return found.map((secureFile) -> {
+            try {
+
+                UUID id = UUID.randomUUID();
+                //get the url
+                Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
+
+                //create PendingDownload to save
+                PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()),
+                        secureFile.getFilename(),
+                        secureFile.getEncryptedData(),
+                        Instant.now(clock).plus(this.downloadCache.getExpiry()),
+                        res.isPresent()? res.get() : null);
+
+                //put it in the cache
+                Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);
+
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.valueOf(secureFile.getContentType()));
+                headers.setLocation(downloadController.generateDownload(id, bucket, secureFile));
+                final ResourceSupport resource = new ResourceSupport();
+                resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
+                return new ResponseEntity<>(resource, headers, HttpStatus.SEE_OTHER);
+            } catch (TransientDataAccessResourceException e) {
+                throw new DecryptionFailedException(e);
+            }
+        }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
     /**
      * The first point of call when the user clicks on the download. 
      * @param bucket
@@ -300,7 +339,7 @@ public class FileController {
     }
 
     /**
-     * The first point of call when the user clicks on the download.
+     * The first point of call when the user clicks on the download encrypted file.
      * @param bucket
      * @param filename
      * @return
