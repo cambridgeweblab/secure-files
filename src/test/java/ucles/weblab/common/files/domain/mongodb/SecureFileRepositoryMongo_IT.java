@@ -5,19 +5,15 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import ucles.weblab.common.files.domain.AesGcmEncryptionStrategy;
 import ucles.weblab.common.files.domain.AutoPurgeSecureFileCollectionServiceImpl;
@@ -32,7 +28,6 @@ import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
 import ucles.weblab.common.files.domain.SecureFileCollectionService;
 import ucles.weblab.common.files.domain.SecureFileEntity;
 import ucles.weblab.common.files.domain.SecureFileRepository;
-import ucles.weblab.common.files.webapi.FileController;
 import ucles.weblab.common.files.webapi.converter.FilesConverters;
 
 import java.io.IOException;
@@ -169,7 +164,7 @@ public class SecureFileRepositoryMongo_IT {
                 public byte[] getPlainData() {
                     return originalData;
                 }
-                
+
                 @Override
                 public Instant getCreatedDate() {
                     return Instant.now();
