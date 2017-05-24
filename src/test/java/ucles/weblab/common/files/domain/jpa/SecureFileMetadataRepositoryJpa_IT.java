@@ -7,10 +7,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.orm.jpa.EntityScan;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
  * @since 18/03/15
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration
+@SpringBootTest
 @Transactional
 public class SecureFileMetadataRepositoryJpa_IT {
     private static final String FILE_RESOURCE_PATH = "81672667_bus.jpg";
@@ -140,7 +140,7 @@ public class SecureFileMetadataRepositoryJpa_IT {
                 public byte[] getPlainData() {
                     return originalData;
                 }
-                
+
                 @Override
                 public Instant getCreatedDate() {
                     return Instant.now();

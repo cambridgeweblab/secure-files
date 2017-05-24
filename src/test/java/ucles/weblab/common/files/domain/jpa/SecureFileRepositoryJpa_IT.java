@@ -6,12 +6,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.orm.jpa.EntityScan;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -54,7 +53,7 @@ import static org.junit.Assume.assumeNotNull;
  * @since 18/03/15
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration
+@SpringBootTest
 @Transactional
 @TestPropertySource(properties = "spring.jpa.show-sql=true")
 public class SecureFileRepositoryJpa_IT {
@@ -168,7 +167,7 @@ public class SecureFileRepositoryJpa_IT {
                 public byte[] getPlainData() {
                     return originalData;
                 }
-                
+
                 @Override
                 public Instant getCreatedDate() {
                     return Instant.now();

@@ -1,16 +1,14 @@
 package ucles.weblab.common.files.webapi;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.google.common.io.Resources;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.orm.jpa.EntityScan;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -45,22 +43,10 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import javax.transaction.Transactional;
-import org.junit.Ignore;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
-import org.springframework.test.web.servlet.ResultActions;
-import ucles.weblab.common.files.domain.s3.BlobStoreServiceS3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.IMAGE_JPEG;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -75,8 +61,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @since 25/06/15
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration
-@WebIntegrationTest(value = "classpath:/public", randomPort = true)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@WebIntegrationTest(value = "classpath:/public", randomPort = true)
 @Transactional
 public class FileController_IT extends AbstractRestController_IT {
     /** This multipart resource MUST have CR LF line terminators, not just LF. */
@@ -122,14 +108,13 @@ public class FileController_IT extends AbstractRestController_IT {
         MultipartResolver multipartResolver() {
             return new JerseyMultipartResolver();
         }
-        
+
         @Bean
         FileDownloadCache fileDownloadCache() {
             return new FileDownloadCacheInMemory();
         }
-
     }
-    
+
     @Test
     public void testUploadingBase64EncodedFile() throws Exception {
         MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<String, String>() {{

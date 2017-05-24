@@ -5,7 +5,7 @@
     <parent>
         <artifactId>weblab-common-java</artifactId>
         <groupId>ucles.weblab</groupId>
-        <version>0.4-SNAPSHOT</version>
+        <version>0.5-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -60,7 +60,7 @@
             <artifactId>hibernate-jpamodelgen</artifactId>
             <optional>true</optional>
         </dependency>
-        
+
         <!-- AWS -->
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -72,7 +72,7 @@
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.10.52</version>
         </dependency>
-        
+
         <!--Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -109,7 +109,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-actuator</artifactId>
         </dependency>
-        
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -167,7 +167,7 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <scope>test</scope>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
@@ -177,7 +177,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <scope>test</scope>
-        </dependency>        
+        </dependency>
     </dependencies>
 
 </project>
