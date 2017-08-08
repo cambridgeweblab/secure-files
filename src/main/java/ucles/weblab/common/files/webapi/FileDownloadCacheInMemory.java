@@ -112,8 +112,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     @Override
     public Optional<URI> getUrl(UUID id, String collectionName, String fileName) {
         try {
-            // TODO: validate that toUri() is OK and doesn't need replacing with URI.create(...toString()) to avoid double-encoding.
-            String url = ControllerLinkBuilder.linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id.toString(),fileName )).toUri().toString();
+            String url = ControllerLinkBuilder.linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id.toString(),fileName )).toString();
             return Optional.of(URI.create(url));
         } catch (Exception e) {
             log.warn("Exception caught while getting url from ControllerLinkBuilder, returning empty optional", e);
@@ -122,18 +121,9 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
 
     }
 
-    /*@Override
-    public Optional<String> getRecentUrl(String collectionName, String fileName) {
-
-        //always return empty
-        return Optional.empty();
-
-    } */
-
     @Override
     public URI getRedirectUrl(UUID id, String collectionName, String fileName) {
-        // TODO: validate that toUri() is OK and doesn't need replacing with URI.create(...toString()) to avoid double-encoding.
-        return linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id == null ? null : id.toString(), fileName)).toUri();
+        return URI.create(linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id == null ? null : id.toString(), fileName)).toString());
     }
 
 
