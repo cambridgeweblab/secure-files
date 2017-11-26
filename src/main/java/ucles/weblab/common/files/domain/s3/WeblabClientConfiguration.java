@@ -44,7 +44,7 @@ public final class WeblabClientConfiguration extends ClientConfiguration {
             int proxyPort = Integer.parseInt(System.getProperty("http.proxyPort"));
             this.setProxyPort(proxyPort);
         }
-        catch (NumberFormatException ex) {
+        catch (NumberFormatException ex) { // NOPMD
             /* use default */
         }
         String proxyDomain = System.getProperty("http.proxyDomain");

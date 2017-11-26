@@ -28,15 +28,6 @@ public class SecureFileEntityMongo implements SecureFileEntity {
     public static final String FILENAME_PROPERTY = "filename";
     public static final String CONTENT_TYPE_PROPERTY = "contentType";
 
-    {
-        configureBean(this);
-    }
-
-    public Object readResolve() {
-        configureBean(this);
-        return this;
-    }
-
     private SecureFileCollectionEntityMongo bucket;
     private GridFSDBFile dbFile;
     private String filename;
@@ -57,6 +48,7 @@ public class SecureFileEntityMongo implements SecureFileEntity {
 
     @SuppressWarnings("UnusedDeclaration") // for testing
     SecureFileEntityMongo() {
+        configureBean(this);
         this.encryptionService = null;
     }
 
@@ -66,6 +58,7 @@ public class SecureFileEntityMongo implements SecureFileEntity {
      * @throws IOException
      */
     public SecureFileEntityMongo(SecureFileCollectionEntityMongo bucket, GridFSDBFile dbFile) {
+        this();
         this.bucket = bucket;
         this.dbFile = dbFile;
         this.filename = dbFile.getFilename();
@@ -80,6 +73,11 @@ public class SecureFileEntityMongo implements SecureFileEntity {
         } catch (IOException ex) {
             throw new TransientDataAccessResourceException("Could not obtain file data", ex);
         }
+    }
+
+    public Object readResolve() {
+        configureBean(this);
+        return this;
     }
 
     @Autowired
@@ -154,8 +152,12 @@ public class SecureFileEntityMongo implements SecureFileEntity {
     
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         SecureFileEntityMongo that = (SecureFileEntityMongo) o;
         return Objects.equals(length, that.length) &&
                 Objects.equals(filename, that.filename) &&

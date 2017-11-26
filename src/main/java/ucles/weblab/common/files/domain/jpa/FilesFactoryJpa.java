@@ -4,12 +4,11 @@ import ucles.weblab.common.files.domain.FilesFactory;
 import ucles.weblab.common.files.domain.SecureFile;
 import ucles.weblab.common.files.domain.SecureFileCollection;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
-import ucles.weblab.common.files.domain.SecureFileEntity;
 
 /**
  * Implementation of the factory interface which creates JPA entities, suitable for persistence with
  * {@link SecureFileCollectionRepositoryJpa#save(SecureFileCollectionEntity)} and
- * {@link SecureFileRepositoryJpa#save(SecureFileEntity)}.
+ * {@link SecureFileRepositoryJpa#save(ucles.weblab.common.files.domain.SecureFileEntity)}.
  *
  * @since 05/06/15
  */

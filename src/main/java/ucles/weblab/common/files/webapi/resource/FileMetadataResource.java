@@ -15,10 +15,7 @@ public class FileMetadataResource extends ResourceSupport {
     private String notes;
     private Instant createdDate;
 
-    /**
-     * Empty constructor used by Jackson.
-     */
-    protected FileMetadataResource() {
+    protected FileMetadataResource() { // Used by Jackson
     }
 
     public FileMetadataResource(String filename, String contentType, long length, String notes, Instant createdDate) {

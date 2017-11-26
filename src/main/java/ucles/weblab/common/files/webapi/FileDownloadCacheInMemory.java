@@ -1,5 +1,14 @@
 package ucles.weblab.common.files.webapi;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import ucles.weblab.common.files.blob.api.BlobId;
+import ucles.weblab.common.files.blob.api.BlobStoreResult;
+import ucles.weblab.common.files.domain.SecureFileMetadata;
+
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -9,16 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import ucles.weblab.common.files.blob.api.BlobId;
-import ucles.weblab.common.files.blob.api.BlobStoreResult;
-import ucles.weblab.common.files.domain.SecureFileMetadata;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
@@ -47,13 +46,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     @Override
     @Scheduled(fixedRate = 15 * 60 * 1000)
     public void clean() {
-        final Iterator<Map.Entry<String, PendingDownload>> cacheEntries = recentDownloadCache.entrySet().iterator();
-        while (cacheEntries.hasNext()) {
-            Map.Entry<String, PendingDownload> cacheEntry =  cacheEntries.next();
-            if (cacheEntry.getValue().getPurgeTime().isBefore(Instant.now(clock))) {
-                cacheEntries.remove();
-            }
-        }
+        recentDownloadCache.entrySet().removeIf(cacheEntry -> cacheEntry.getValue().getPurgeTime().isBefore(Instant.now(clock)));
     }
 
     @Override
@@ -76,7 +69,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     public Optional<BlobStoreResult> put(UUID id, String collectionName, PendingDownload pendingDownload) {
 
         String key = createCacheKey(id, collectionName, pendingDownload.getFilename());
-        PendingDownload result = recentDownloadCache.put(key, pendingDownload );
+        recentDownloadCache.put(key, pendingDownload);
         BlobStoreResult blobStoreResult = new BlobStoreResult(new BlobId(id.toString()),
                                                               pendingDownload.getFilename(),
                                                               collectionName,
@@ -112,7 +105,7 @@ public class FileDownloadCacheInMemory implements FileDownloadCache<UUID, Pendin
     @Override
     public Optional<URI> getUrl(UUID id, String collectionName, String fileName) {
         try {
-            String url = ControllerLinkBuilder.linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id.toString(),fileName )).toString();
+            String url = linkTo(methodOn(DownloadController.class).fetchPreviouslyGeneratedDownload(collectionName, id.toString(),fileName )).toString();
             return Optional.of(URI.create(url));
         } catch (Exception e) {
             log.warn("Exception caught while getting url from ControllerLinkBuilder, returning empty optional", e);

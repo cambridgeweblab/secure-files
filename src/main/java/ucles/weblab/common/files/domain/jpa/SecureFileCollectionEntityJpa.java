@@ -1,23 +1,17 @@
 package ucles.weblab.common.files.domain.jpa;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.springframework.data.domain.Persistable;
 import ucles.weblab.common.files.domain.SecureFileCollection;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.PostPersist;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Collection of files. These have a purge date associated with the
@@ -35,16 +29,12 @@ public class SecureFileCollectionEntityJpa implements Persistable<String>, Secur
     private String bucket;
 
     @Transient
-    private boolean isNew;
+    private boolean unsaved;
 
     @Column(unique = true)
     private String displayName;
 
     private Instant purgeInstant;
-
-    @OneToMany(mappedBy = SecureFileEntityJpa.COLLECTION)
-    @Fetch(FetchMode.SUBSELECT)
-    private List<SecureFileEntityJpa> files = new ArrayList<>();
 
     protected SecureFileCollectionEntityJpa() { // For Hibernate and Jackson
     }
@@ -53,7 +43,7 @@ public class SecureFileCollectionEntityJpa implements Persistable<String>, Secur
         this.displayName = vo.getDisplayName();
         this.purgeInstant = vo.getPurgeInstant().orElse(null);
         this.bucket = deriveBucket(displayName);
-        this.isNew = true;
+        this.unsaved = true;
     }
 
     @Override
@@ -63,12 +53,12 @@ public class SecureFileCollectionEntityJpa implements Persistable<String>, Secur
 
     @Override
     public boolean isNew() {
-        return isNew;
+        return unsaved;
     }
 
     @PostPersist
     void markNotNew() {
-        this.isNew = false;
+        this.unsaved = false;
     }
 
     public String getDisplayName() {

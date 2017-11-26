@@ -1,5 +1,7 @@
 package ucles.weblab.common.files.domain;
 
+import java.util.Locale;
+
 /**
  * Persistence-technology-neutral interface representing a persistable secure file collection entity.
  *
@@ -26,7 +28,7 @@ public interface SecureFileCollectionEntity extends SecureFileCollection {
      * @return the bucket name used as a unique id for the secure file storage
      */
     default String deriveBucket(String displayName) {
-        final String safeName = displayName.toLowerCase().replaceAll("\\W", ""); // Replace all non-word chars
+        final String safeName = displayName.toLowerCase(Locale.UK).replaceAll("\\W", ""); // Replace all non-word chars
         return BUCKET_PREFIX + safeName;
     }
 

@@ -17,8 +17,8 @@ public class FileCollectionResource extends ResourceSupport {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant purgeInstant;
 
-    @SuppressWarnings("UnusedDeclaration") // Used by Jackson
-    protected FileCollectionResource() {
+    @SuppressWarnings("UnusedDeclaration")
+    protected FileCollectionResource() { // Used by Jackson
     }
 
     public FileCollectionResource(String displayName, Instant purgeInstant) {

@@ -27,16 +27,13 @@ public final class BlobId implements Serializable {
             return false;
         }
         final BlobId other = (BlobId) obj;
-        if ((this.id == null) ? (other.id != null) : !this.id.equals(other.id)) {
-            return false;
-        }
-        return true;
+        return (this.id == null) ? other.id == null : this.id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 53 * hash + (this.id != null ? this.id.hashCode() : 0);
+        hash = 53 * hash + (this.id == null ? 0 : this.id.hashCode());
         return hash;
     }
 

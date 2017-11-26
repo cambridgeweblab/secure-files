@@ -22,9 +22,6 @@ import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.blob.api.BlobStoreService;
 import ucles.weblab.common.files.domain.SecureFileMetadata;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
-
 /**
  *
  * @author Sukhraj

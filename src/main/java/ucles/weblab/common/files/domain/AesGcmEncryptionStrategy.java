@@ -35,7 +35,7 @@ public class AesGcmEncryptionStrategy implements EncryptionStrategy {
             try {
                 Security.addProvider((java.security.Provider) Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance());
             } catch (Exception e) {
-                throw new RuntimeException("JDK <8 and no Bouncy Castle available.");
+                throw new IllegalStateException("JDK <8 and no Bouncy Castle available.", e);
             }
         }
     }
@@ -81,8 +81,7 @@ public class AesGcmEncryptionStrategy implements EncryptionStrategy {
             if (aad != null) {
                 cipher.updateAAD(aad.getBytes());
             }
-            byte[] decrypted = cipher.doFinal(encryptedData, blockSize, encryptedData.length - blockSize);
-            return decrypted;
+            return cipher.doFinal(encryptedData, blockSize, encryptedData.length - blockSize);
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException(e);
         }

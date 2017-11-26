@@ -1,7 +1,6 @@
 package ucles.weblab.common.files.webapi.converter;
 
 import org.springframework.hateoas.ResourceAssembler;
-import ucles.weblab.common.files.domain.SecureFileEntity;
 import ucles.weblab.common.files.domain.SecureFileMetadataEntity;
 import ucles.weblab.common.files.webapi.FileController;
 import ucles.weblab.common.files.webapi.resource.FileMetadataResource;

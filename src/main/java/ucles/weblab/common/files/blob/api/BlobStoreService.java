@@ -18,7 +18,7 @@ public interface BlobStoreService {
     /**
      * Clean up for shutdown purposes
      */
-    public void dispose();
+    void dispose();
 
     /**
      * Save the blob 
@@ -29,7 +29,7 @@ public interface BlobStoreService {
      * @return an Optional BlobStoreResult that will hold all information from the result of a 'put'
      * @throws BlobStoreException 
      */
-    public Optional<BlobStoreResult> putBlob(BlobId id, String mimeType, byte data[], Instant purgeTime) throws BlobStoreException;
+    Optional<BlobStoreResult> putBlob(BlobId id, String mimeType, byte data[], Instant purgeTime) throws BlobStoreException;
     
     /**
      * Save the blob in the blob implementation. 
@@ -39,7 +39,7 @@ public interface BlobStoreService {
      * @param length - the length of data to save. 
      * @throws BlobStoreException 
      */
-    public void putBlob(BlobId id, String mimeType, InputStream in, int length) throws BlobStoreException;
+    void putBlob(BlobId id, String mimeType, InputStream in, int length) throws BlobStoreException;
 
     /**
      * Get the blob with the specified id. 
@@ -49,7 +49,7 @@ public interface BlobStoreService {
      * @throws BlobStoreException
      * @throws BlobNotFoundException 
      */
-    public Optional<Blob> getBlob(BlobId id, boolean includeContent) throws BlobStoreException, BlobNotFoundException;
+    Optional<Blob> getBlob(BlobId id, boolean includeContent) throws BlobStoreException, BlobNotFoundException;
     
     /**
      * Get a blob with an id that matches the prefix passed in and has the same suffix as parameter. Both
@@ -61,7 +61,7 @@ public interface BlobStoreService {
      * @throws BlobStoreException
      * @throws BlobNotFoundException 
      */
-    public Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix, boolean includeContent) throws BlobStoreException, BlobNotFoundException;
+    Optional<Blob> getBlobWithPartBlobId(String prefix, String suffix, boolean includeContent) throws BlobStoreException, BlobNotFoundException;
     
     /**
      * Get the blob size of the specified blob with the specified id. 
@@ -70,14 +70,14 @@ public interface BlobStoreService {
      * @throws BlobStoreException
      * @throws BlobNotFoundException 
      */
-    public Optional<Long> getBlobSize(BlobId id) throws BlobStoreException, BlobNotFoundException;
+    Optional<Long> getBlobSize(BlobId id) throws BlobStoreException, BlobNotFoundException;
     
     /**
      * Remove the blob with the Id matching the id passed in 
      * @param id - the name to match when deleting 
      * @throws BlobStoreException 
      */
-    public void removeBlob(BlobId id) throws BlobStoreException;
+    void removeBlob(BlobId id) throws BlobStoreException;
     
     /**
      * Rename the file represented by oldBlob with the id of new blob Id. 
@@ -86,7 +86,7 @@ public interface BlobStoreService {
      * @throws BlobStoreException
      * @throws BlobNotFoundException 
      */
-    public void renameBlob(BlobId oldBlob, BlobId newBlob) throws BlobStoreException, BlobNotFoundException ;
+    void renameBlob(BlobId oldBlob, BlobId newBlob) throws BlobStoreException, BlobNotFoundException ;
 
     /**
      * Each implementation must provide a way to get the url of the Blob for the specified blob id. 
@@ -95,14 +95,14 @@ public interface BlobStoreService {
      * @throws BlobStoreException
      * @throws BlobNotFoundException 
      */
-    public Optional<URI> getUrl(BlobId blobId) throws BlobStoreException, BlobNotFoundException;
+    Optional<URI> getUrl(BlobId blobId) throws BlobStoreException, BlobNotFoundException;
     
     /**
      * Return a flag if the blob id exists in the blob store implementation. 
      * @param blobId
      * @return 
      */
-    public boolean exists(BlobId blobId);
+    boolean exists(BlobId blobId);
     
     /**
      * List all blob id for all blobs in blob store implementation. 
@@ -112,11 +112,11 @@ public interface BlobStoreService {
      * @throws BlobStoreException 
      * @throws BlobNotFoundException 
      */
-    public List<Blob> listBlobs(boolean includeContent) throws BlobStoreException, BlobNotFoundException;
+    List<Blob> listBlobs(boolean includeContent) throws BlobStoreException, BlobNotFoundException;
     
     /**
      * Expose the root folder
      * @return 
      */
-    public String getBucketName();
+    String getBucketName();
 }

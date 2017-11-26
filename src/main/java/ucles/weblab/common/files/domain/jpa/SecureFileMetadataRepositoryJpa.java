@@ -2,9 +2,7 @@ package ucles.weblab.common.files.domain.jpa;
 
 import org.springframework.data.repository.Repository;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
-import ucles.weblab.common.files.domain.SecureFileEntity;
 import ucles.weblab.common.files.domain.SecureFileMetadataRepository;
-import ucles.weblab.common.files.domain.SecureFileRepository;
 
 import java.util.Collection;
 import java.util.Optional;

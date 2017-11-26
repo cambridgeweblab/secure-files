@@ -36,20 +36,11 @@ import static ucles.weblab.common.domain.ConfigurableEntitySupport.configureBean
 public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity {
     public static final String COLLECTION = "collection";
 
-    {
-        configureBean(this);
-    }
-
-    public Object readResolve() {
-        configureBean(this);
-        return this;
-    }
-
     @Id
     @Column(updatable = false)
     private UUID id;
     @Transient
-    private boolean isNew;
+    private boolean unsaved;
 
     @ManyToOne
     private SecureFileCollectionEntityJpa collection;
@@ -76,14 +67,16 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
     private String defaultCipherName;
 
     private Instant createdDate;
-    
+
     protected SecureFileEntityJpa() {
          // For Hibernate and Jackson
+        configureBean(this);
     }
 
     public SecureFileEntityJpa(SecureFileCollectionEntityJpa collection, SecureFile vo) {
+        this();
         this.id = UUID.randomUUID();
-        this.isNew = true;
+        this.unsaved = true;
         this.collection = collection;
         this.filename = vo.getFilename();
         this.contentType = vo.getContentType();
@@ -92,6 +85,11 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
         this.cipher = defaultCipherName;
         this.encryptedData = encryptionService.encrypt(this.cipher, getFileKey(), vo.getPlainData());
         this.createdDate =  Instant.now();
+    }
+
+    public Object readResolve() {
+        configureBean(this);
+        return this;
     }
 
     @Autowired
@@ -111,12 +109,12 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
 
     @Override
     public boolean isNew() {
-        return isNew;
+        return unsaved;
     }
 
     @PostPersist
     void markNotNew() {
-        this.isNew = false;
+        this.unsaved = false;
     }
 
     @Override
@@ -182,7 +180,7 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
      * Unique key for the file.
      * To be combined with a system-wide secret key to decrypt or encrypt the file.
      */
-    byte[] getFileKey() {
+    private final byte[] getFileKey() {
         return ByteBuffer.allocate(16)
                 .putLong(id.getMostSignificantBits())
                 .putLong(id.getLeastSignificantBits())
@@ -191,8 +189,12 @@ public class SecureFileEntityJpa implements Persistable<UUID>, SecureFileEntity 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         SecureFileEntityJpa that = (SecureFileEntityJpa) o;
         return Objects.equals(id, that.id);
     }

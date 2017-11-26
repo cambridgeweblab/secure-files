@@ -19,7 +19,7 @@ import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
  * @author Sukhraj
  */
 public class SecureFileCollectionRepositoryS3 implements SecureFileCollectionRepository {
-    
+    private static final String NOT_SUPPORTED_YET = "Not supported yet.";
     private final BlobStoreService blobStoreService;
     
     @Autowired
@@ -29,7 +29,7 @@ public class SecureFileCollectionRepositoryS3 implements SecureFileCollectionRep
     
     @Override
     public SecureFileCollectionEntity findOne(String id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
@@ -58,22 +58,22 @@ public class SecureFileCollectionRepositoryS3 implements SecureFileCollectionRep
 
     @Override
     public Collection<? extends SecureFileCollectionEntity> findAll() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SecureFileCollectionEntity findOneByDisplayName(String displayName) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SecureFileCollectionEntity findOneByBucket(String bucket) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public Long removeByPurgeInstantBefore(Instant cutOff) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
     
 }

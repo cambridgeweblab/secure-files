@@ -19,7 +19,6 @@ import java.util.Optional;
 @SuppressWarnings("CanBeFinal")
 @Document(collection = "collections", language = "english")
 public class SecureFileCollectionEntityMongo extends AbstractEntity implements SecureFileCollectionEntity {
-    private static final String BUCKET_PREFIX = "fs.";
 
     @Indexed(unique = true)
     private String displayName;
@@ -27,8 +26,8 @@ public class SecureFileCollectionEntityMongo extends AbstractEntity implements S
     private String bucket;
     private Instant purgeInstant;
 
-    @SuppressWarnings("UnusedDeclaration") // For Jackson
-    protected SecureFileCollectionEntityMongo() {
+    @SuppressWarnings("UnusedDeclaration")
+    protected SecureFileCollectionEntityMongo() { // For Jackson
     }
 
     public SecureFileCollectionEntityMongo(SecureFileCollection vo) {

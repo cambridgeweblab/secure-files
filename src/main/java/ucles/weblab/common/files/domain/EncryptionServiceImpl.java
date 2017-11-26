@@ -13,7 +13,7 @@ public class EncryptionServiceImpl implements EncryptionService {
 
     public EncryptionServiceImpl(Collection<EncryptionStrategy> delegates, byte[] secretKey) {
         this.delegates = delegates;
-        this.secretKey = secretKey;
+        this.secretKey = secretKey.clone();
     }
 
     @Override

@@ -5,21 +5,12 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.CopyObjectRequest;
-import com.amazonaws.services.s3.model.CopyObjectResult;
-import com.amazonaws.services.s3.model.DeleteObjectRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
+import com.amazonaws.services.s3.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import ucles.weblab.common.files.blob.api.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,15 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import ucles.weblab.common.files.blob.api.Blob;
-import ucles.weblab.common.files.blob.api.BlobId;
-import ucles.weblab.common.files.blob.api.BlobNotFoundException;
-import ucles.weblab.common.files.blob.api.BlobStoreException;
-import ucles.weblab.common.files.blob.api.BlobStoreResult;
-import ucles.weblab.common.files.blob.api.BlobStoreService;
 
 /**
  * An amazon s3 implementation of the BlobStoreService. 
@@ -51,9 +33,10 @@ import ucles.weblab.common.files.blob.api.BlobStoreService;
  * @author Sukhraj
  */
 public class BlobStoreServiceS3 implements BlobStoreService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(BlobStoreServiceS3.class);
-        
+    public static final String FROM_S3 = " from S3";
+
     /*Amazon S3 Client to interact with*/
     private final AmazonS3 s3;
     
@@ -84,9 +67,9 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         
         this.bucketName = (namespace + "-" + accountId).toLowerCase();
 
-        this.s3 = awsCredentials != null ?
-                new AmazonS3Client(awsCredentials, new WeblabClientConfiguration(true, 5)) :
-                new AmazonS3Client(new DefaultAWSCredentialsProviderChain(), new WeblabClientConfiguration(true, 5));
+        this.s3 = awsCredentials == null ?
+                new AmazonS3Client(new DefaultAWSCredentialsProviderChain(), new WeblabClientConfiguration(true, 5)) :
+                new AmazonS3Client(awsCredentials, new WeblabClientConfiguration(true, 5));
         
         this.rootPath = rootPath;        
         this.s3Region = s3region;        
@@ -120,7 +103,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             request.withCannedAcl(CannedAccessControlList.PublicRead);
             
             //put the result 
-            PutObjectResult result = s3.putObject(request);                        
+            s3.putObject(request);
             
             BlobStoreResult blobResult = new BlobStoreResult(id, id.getId(), rootPath, expiryTime, "");
             
@@ -148,7 +131,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
 
             PutObjectRequest request = new PutObjectRequest(bucketName, getKey(id), in, metadata);
 
-            PutObjectResult result = s3.putObject(request);
+            s3.putObject(request);
             
             log.info("Wrote data to BlobId[" + id + "] to a total of [" + length + "] bytes");
         }
@@ -190,13 +173,13 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         }
         catch (AmazonS3Exception ex) {
             if (ex.getStatusCode() == 404) {
-                throw new BlobNotFoundException("BlobId[" + id + "] not found whilst attempting to retrieve from S3");
+                throw new BlobNotFoundException(id + " not found whilst attempting to retrieve from S3"); // NOPMD - lack of exception is deliberate
             }
 
-            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to retrieve BlobId[" + id + "] from S3", ex);
+            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to retrieve " + id + FROM_S3, ex);
         }
         catch (Exception ex) {
-            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to retrieve BlobId[" + id + "] from S3", ex);
+            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to retrieve " + id + FROM_S3, ex);
         }
         finally {
             
@@ -216,9 +199,9 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     @Override
     public Optional<Long> getBlobSize(BlobId id) throws BlobStoreException, BlobNotFoundException {
        // S3Object object = null;
-        
-        GetObjectRequest request = new GetObjectRequest(bucketName, getKey(id));
-        
+
+        new GetObjectRequest(bucketName, getKey(id));
+
         //get the size of an s3 object efficiently, metadata....
         
         try {
@@ -226,9 +209,9 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             return Optional.of(objectMetadata.getContentLength());
         } catch (AmazonS3Exception ex) {
             if (ex.getStatusCode() == 404) {
-                throw new BlobNotFoundException("BlobId[" + id + "] not found whilst attempting to retrieve from S3");
+                throw new BlobNotFoundException(id + " not found whilst attempting to retrieve from S3"); // NOPMD - lack of exception is deliberate
             }
-            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to retrieve BlobId[" + id + "] from S3", ex);
+            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to retrieve " + id + FROM_S3, ex);
 
         }
         
@@ -245,7 +228,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             log.info("Returning from deleting object with id {}", id.getId());
         }
         catch (Exception ex) {
-            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to delete BlobId[" + id + "] from S3", ex);
+            throw new BlobStoreException(ex.getClass() + " thrown whilst attempting to delete " + id + FROM_S3, ex);
         }
     }
 
@@ -254,15 +237,15 @@ public class BlobStoreServiceS3 implements BlobStoreService {
         //Copy the object
         try {
             CopyObjectRequest copyRequest = new CopyObjectRequest(rootPath, getKey(oldBlob), rootPath, getKey(newBlob));
-            CopyObjectResult copyObject = s3.copyObject(copyRequest);
-            
+            s3.copyObject(copyRequest);
+
             //Delete the original
             DeleteObjectRequest deleteRequest = new DeleteObjectRequest(rootPath, getKey(oldBlob));
             s3.deleteObject(deleteRequest);
             
         } catch (AmazonServiceException ex )   {
             if (ex.getStatusCode() == 404) {
-                throw new BlobNotFoundException("BlobId[" + oldBlob + "] not found whilst attempting to retrieve from S3");
+                throw new BlobNotFoundException(oldBlob + " not found whilst attempting to retrieve from S3"); // NOPMD - lack of exception is deliberate
             }
         }      
         
@@ -279,7 +262,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
             URI uri = new URI(url);
             return Optional.of(uri);
         } catch (URISyntaxException e) {
-            throw new BlobStoreException("BlobId[" + blobId + "] not found whilst attempting to create URI");
+            throw new BlobStoreException(blobId + " not found whilst attempting to create URI"); // NOPMD - lack of exception is deliberate
         }  
     }
  
@@ -301,8 +284,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
     @Override
     public boolean exists(BlobId blobId) {
 
-        boolean doesObjectExist = s3.doesObjectExist(bucketName, blobId.getId());
-        return doesObjectExist;
+        return s3.doesObjectExist(bucketName, blobId.getId());
     }   
     
     @Override
@@ -338,7 +320,7 @@ public class BlobStoreServiceS3 implements BlobStoreService {
                     
                     
                     //remove the rootpath part of the filename, if there is one
-                    if (rootPath != null || !rootPath.isEmpty()) {
+                    if (rootPath != null && !rootPath.isEmpty()) {
                         name = name.replaceFirst(rootPath + "/", "");
                     }                            
                     //get the blob and add it to the list 

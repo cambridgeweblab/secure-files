@@ -1,7 +1,6 @@
 package ucles.weblab.common.files.domain.s3;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetBucketLocationRequest;
@@ -38,11 +37,10 @@ public class S3HealthCheckIndicator implements HealthIndicator{
     public Health health() {
 
         AmazonS3Client s3Client = new AmazonS3Client(awsCredentials);
-        String currentLocation = null;
         try {
             GetBucketLocationRequest request = new GetBucketLocationRequest(bucketName);
             //get the bucket location to test if connection works
-            currentLocation = s3Client.getBucketLocation(request);
+            s3Client.getBucketLocation(request);
 
         } catch (AmazonClientException a) {
 

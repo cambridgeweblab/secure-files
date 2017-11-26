@@ -19,7 +19,7 @@ public final class Blob implements Serializable {
     public Blob(BlobId id, String mimeType, byte[] data, Instant expiryDate, String url) {
         this.id = id;
         this.mimeType = mimeType;
-        this.data = data;
+        this.data = data.clone();
         this.expiryDate = expiryDate;
         this.url = url;
     }

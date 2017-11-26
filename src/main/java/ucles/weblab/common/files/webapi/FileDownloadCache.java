@@ -11,16 +11,16 @@ import ucles.weblab.common.files.domain.SecureFileMetadata;
 /**
  *
  * @author Sukhraj
- * @param <T>
- * @param <PendingDownload>
+ * @param <T> the id type
+ * @param <D> the pending download type
  */
-public interface FileDownloadCache<T extends Serializable, PendingDownload> {
+public interface FileDownloadCache<T extends Serializable, D> {
     
     void clean();
     
-    Optional<PendingDownload> get(T id, String collectionName, String fileName);
+    Optional<D> get(T id, String collectionName, String fileName);
         
-    Optional<BlobStoreResult> put(T id, String collectionName, PendingDownload pendingDownload);
+    Optional<BlobStoreResult> put(T id, String collectionName, D pendingDownload);
     
     Duration getExpiry();
     

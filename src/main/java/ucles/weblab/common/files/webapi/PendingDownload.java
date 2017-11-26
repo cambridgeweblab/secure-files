@@ -18,7 +18,7 @@ public class PendingDownload {
     
     PendingDownload(MediaType contentType, String filename, byte[] content, Instant purgeTime, URI url) {
         this.contentType = contentType;
-        this.content = content;
+        this.content = content.clone();
         this.filename = filename;
         this.purgeTime = purgeTime;
         this.url = url;

@@ -35,10 +35,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ucles.weblab.common.files.blob.api.BlobStoreResult;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
@@ -56,6 +56,7 @@ import static ucles.weblab.common.webapi.LinkRelation.SELF;
 @RequestMapping("/api/files")
 public class FileController {
 
+    private static final String IS_AUTHENTICATED = "isAuthenticated()";
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final FilesFactory filesFactory;
@@ -102,7 +103,7 @@ public class FileController {
     }
 
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = APPLICATION_JSON_UTF8_VALUE)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize(IS_AUTHENTICATED)
     public List<FileCollectionResource> listBuckets() {
         return secureFileCollectionRepository.findAll().stream()
                 .map(fileCollectionResourceAssembler::toResource)
@@ -150,7 +151,9 @@ public class FileController {
     @AccessAudited
     public FileMetadataResource updateFileMetadata(@PathVariable String bucket, @PathVariable String filename, @RequestBody FileMetadataResource update) {
         SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
-        if (collection == null) throw new ResourceNotFoundException(bucket);
+        if (collection == null) {
+            throw new ResourceNotFoundException(bucket);
+        }
         final SecureFileEntity file = secureFileRepository.findOneByCollectionAndFilename(collection, filename)
                 .orElseThrow(() -> new ResourceNotFoundException(filename));
 
@@ -171,7 +174,9 @@ public class FileController {
     @AccessAudited
     public void deleteUploadedFile(@PathVariable String bucket, @PathVariable String filename) {
         SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
-        if (collection == null) throw new ResourceNotFoundException(bucket);
+        if (collection == null) {
+            throw new ResourceNotFoundException(bucket);
+        }
         final SecureFileEntity file = secureFileRepository.findOneByCollectionAndFilename(collection, filename)
                 .orElseThrow(() -> new ResourceNotFoundException(filename));
 
@@ -194,49 +199,20 @@ public class FileController {
     }
 
     @RequestMapping(value = "/{bucket}/{filename}/download/", method = RequestMethod.GET)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     public ResponseEntity<ResourceSupport> redirectToDownload(@PathVariable String bucket, @PathVariable String filename) {
-        final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
-        if (collection == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
-        return found.map((secureFile) -> {
-            try {
-
-                UUID id = UUID.randomUUID();
-                //get the url
-                Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
-
-                //create PendingDownload to save
-                PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()),
-                                                         secureFile.getFilename(),
-                                                         secureFile.getPlainData(),
-                                                         Instant.now(clock).plus(this.downloadCache.getExpiry()),
-                                                         res.orElse(null));
-
-                //put it in the cache
-                //noinspection unused
-                Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);
-
-
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.valueOf(secureFile.getContentType()));
-                headers.setLocation(downloadController.generateDownload(id, bucket, secureFile));
-                final ResourceSupport resource = new ResourceSupport();
-                resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
-                return new ResponseEntity<>(resource, headers, HttpStatus.SEE_OTHER);
-            } catch (TransientDataAccessResourceException e) {
-                throw new DecryptionFailedException(e);
-            }
-        }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return redirectToDownload(bucket, filename, SecureFile::getPlainData);
     }
 
     @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/", method = RequestMethod.GET)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     public ResponseEntity<ResourceSupport> redirectToDownloadEncrypted(@PathVariable String bucket, @PathVariable String filename) {
+        return redirectToDownload(bucket, filename, SecureFile::getEncryptedData);
+    }
+
+    private ResponseEntity<ResourceSupport> redirectToDownload(@PathVariable String bucket, @PathVariable String filename, Function<SecureFile, byte[]> extractData) {
         final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
         if (collection == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -252,14 +228,12 @@ public class FileController {
                 //create PendingDownload to save
                 PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()),
                         secureFile.getFilename(),
-                        secureFile.getEncryptedData(),
+                        extractData.apply(secureFile),
                         Instant.now(clock).plus(this.downloadCache.getExpiry()),
                         res.orElse(null));
 
                 //put it in the cache
-                //noinspection unused
-                Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);
-
+                downloadCache.put(id, bucket, pd);
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.valueOf(secureFile.getContentType()));
@@ -279,45 +253,11 @@ public class FileController {
     @RequestMapping(value = "/{bucket}/{filename}/download/",
                     method = RequestMethod.POST,
                     produces = APPLICATION_JSON_UTF8_VALUE)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     public ResponseEntity<ResourceSupport> generateDownloadLink(@PathVariable String bucket,
                                                                 @PathVariable String filename) {
-
-        //get the collection name
-        final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
-        if (collection == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        //always create a random id, first time round
-        UUID id = UUID.randomUUID();
-        URI location;
-        Optional<PendingDownload> fileOpt;
-
-        synchronized (mutex) {
-            //one thread at a time
-            log.info(Thread.currentThread().getName() + " thread is getting {} from cache", filename);
-            fileOpt = downloadCache.get(id, bucket, filename);
-
-            if (fileOpt.isPresent()) {
-                log.info(Thread.currentThread().getName() + " thread found {} in cache", filename);
-                //if it's there, then set the location
-                location = fileOpt.get().getUrl();
-            } else {
-                log.info(Thread.currentThread().getName() + " thread not found {} in cache, going to database", filename);
-                //this should only be done ONCE no matter how many first threads.
-                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename, false);
-                if (optReturn.isPresent()) {
-                    location = optReturn.get();
-                } else {
-                    log.info("{} not found in repository, returning 404", filename);
-                    //it's not in the cache nor the repository
-                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                }
-            }
-        }
-
-        return getRedirectResponseOrNotFound(location);
+        return generateDownloadLink(bucket, filename, false);
     }
 
     /**
@@ -326,12 +266,15 @@ public class FileController {
     @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/",
             method = RequestMethod.POST,
             produces = APPLICATION_JSON_UTF8_VALUE)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     @CrossOrigin
     public ResponseEntity<ResourceSupport> generateEncryptedDownloadLink(@PathVariable String bucket,
-                                                                @PathVariable String filename ) {
+                                                                         @PathVariable String filename) {
+        return generateDownloadLink(bucket, filename, true);
+    }
 
+    private ResponseEntity<ResourceSupport> generateDownloadLink(@PathVariable String bucket, @PathVariable String filename, boolean encrypted) {
         //get the collection name
         final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
         if (collection == null) {
@@ -354,7 +297,7 @@ public class FileController {
             } else {
                 log.info(Thread.currentThread().getName() + " thread not found {} in cache, going to database", filename);
                 //this should only be done ONCE no matter how many first threads.
-                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename, true);
+                Optional<URI> optReturn  = getLocation(id, bucket, collection, filename, encrypted);
                 if (optReturn.isPresent()) {
                     location = optReturn.get();
                 } else {
@@ -366,8 +309,6 @@ public class FileController {
         }
 
         return getRedirectResponseOrNotFound(location);
-
-
     }
 
     /**
@@ -378,36 +319,36 @@ public class FileController {
      * @param filename - the file to get
      * @param isEncrypted - whether or not to return encrypted file data
      */
-    private synchronized Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename, boolean isEncrypted) {
-        final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
+    private Optional<URI> getLocation(UUID id, String bucket, SecureFileCollectionEntity collection, String filename, boolean isEncrypted) {
+        synchronized (this) {
+            final Optional<? extends SecureFileEntity> found = secureFileRepository.findOneByCollectionAndFilename(collection, filename);
 
-        //if there is a filename
-        if (found.isPresent()) {
-            log.info(Thread.currentThread().getName() + " thread getting file from database and adding cache");
-            //get the file object
-            SecureFileEntity secureFile = found.get();
+            //if there is a filename
+            if (found.isPresent()) {
+                log.info(Thread.currentThread().getName() + " thread getting file from database and adding cache");
+                //get the file object
+                SecureFileEntity secureFile = found.get();
 
-            //each cache knows how to create a url
-            Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
+                //each cache knows how to create a url
+                Optional<URI> res = downloadCache.getUrl(id, bucket, secureFile.getFilename());
 
-            //create PendingDownload to put in the cache
-            PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()),
-                                                     secureFile.getFilename(),
-                                                     isEncrypted ? secureFile.getEncryptedData() : secureFile.getPlainData(),
-                                                     Instant.now(clock).plus(this.downloadCache.getExpiry()),
-                                                     res.orElse(null));
-            //put it in the cache
-            //noinspection unused
-            Optional<BlobStoreResult> putResult = downloadCache.put(id, bucket, pd);
+                //create PendingDownload to put in the cache
+                PendingDownload pd = new PendingDownload(MediaType.valueOf(secureFile.getContentType()),
+                        secureFile.getFilename(),
+                        isEncrypted ? secureFile.getEncryptedData() : secureFile.getPlainData(),
+                        Instant.now(clock).plus(this.downloadCache.getExpiry()),
+                        res.orElse(null));
+                //put it in the cache
+                downloadCache.put(id, bucket, pd);
 
-            //get location
-            URI location = downloadController.generateDownload(id, bucket, secureFile);
+                //get location
+                URI location = downloadController.generateDownload(id, bucket, secureFile);
 
-            return Optional.of(location);
-        } else {
-            return Optional.empty();
+                return Optional.of(location);
+            } else {
+                return Optional.empty();
+            }
         }
-
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
@@ -433,16 +374,16 @@ public class FileController {
     }
 
     private ResponseEntity<ResourceSupport> getRedirectResponseOrNotFound(URI location) {
-        if (location != null) {
+        if (location == null) {
+            log.info("Location was never found, returning 404");
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } else {
             log.info("Location was found, setting headers");
             HttpHeaders headers = new HttpHeaders();
             headers.setLocation(location);
             final ResourceSupport resource = new ResourceSupport();
             resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
             return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
-        } else {
-            log.info("Location was never found, returning 404");
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }
