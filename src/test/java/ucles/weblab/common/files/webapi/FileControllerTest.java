@@ -61,27 +61,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.atMost;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.spy;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
+import static org.mockito.Mockito.*;
 
 /**
  * @since 20/03/15
  */
 @RunWith(MockitoJUnitRunner.class)
 public class FileControllerTest {
-    
+
     private static final Logger log = LoggerFactory.getLogger(FileControllerTest.class);
-    
+
     private static final String FILE_RESOURCE_NAME = "81672667_bus.jpg";
     private static final String FILE_RESOURCE_PATH = FILE_RESOURCE_NAME;
 
@@ -103,24 +93,24 @@ public class FileControllerTest {
     private ArgumentCaptor<SecureFile> secureFileCaptor;
 
     private FileController fileController;
-    
+
     @Mock
     private FileDownloadCacheInMemory fileDownloadCacheInMemory;
-    
+
     @Before
     public void setUp() {
         FilesBuilders filesBuilders = new FilesBuilders();
         fileDownloadCacheInMemory = new FileDownloadCacheInMemory();
         fileDownloadCacheInMemory.configureCacheExpiry(120);
-        fileController = new FileController(mockFilesFactory, 
+        fileController = new FileController(mockFilesFactory,
                                             mockSecureFileCollectionRepository,
                                             mockSecureFileRepository,
                                             mockSecureFileMetadataRepository,
                                             fileMetadataResourceAssembler,
-                                            fileCollectionResourceAssembler, 
+                                            fileCollectionResourceAssembler,
                                             downloadController,
-                                            filesBuilders.secureFileCollectionBuilder(), 
-                                            filesBuilders.secureFileBuilder(), 
+                                            filesBuilders.secureFileCollectionBuilder(),
+                                            filesBuilders.secureFileBuilder(),
                                             fileDownloadCacheInMemory);
     }
 
@@ -411,12 +401,11 @@ public class FileControllerTest {
     }
 
     @Test
-    public void testFetchingPreview() throws IOException {
+    public void testFetchingPreview() {
         final String filename = "Timmy";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final String bucketName = collection.getBucket();
         final SecureFileEntity file = mock(SecureFileEntity.class);
-        when(file.getFilename()).thenReturn(filename);
         when(file.getContentType()).thenReturn("text/pdf");
         when(file.getPlainData()).thenReturn(new byte[0]);
 
@@ -446,8 +435,8 @@ public class FileControllerTest {
         fileController.fetchFileContent(bucketName, filename);
     }
 
-    @Test 
-    public void testGeneratingDownload() throws IOException {
+    @Test
+    public void testGeneratingDownload() {
         final String filename = "Timmy";
         final SecureFileCollectionEntity collection = mockSecureFileCollection("Shaun", Optional.of(Instant.now()));
         final String bucketName = collection.getBucket();
@@ -459,9 +448,9 @@ public class FileControllerTest {
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
-                       
+
         when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
-        
+
         final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 201 Created", HttpStatus.CREATED, result.getStatusCode());
         assertEquals("Should return a Location", result.getHeaders().getLocation(), downloadUri);
@@ -491,7 +480,7 @@ public class FileControllerTest {
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
         verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
-    
+
     @Test
     public void testConcurrentFirstRequestsToSameFile() throws Exception {
         //set up collections and filenames
@@ -504,28 +493,28 @@ public class FileControllerTest {
         when(file.getContentType()).thenReturn("text/pdf");
         when(file.getPlainData()).thenReturn(new byte[0]);
         final URI downloadUri = URI.create("urn:some-test-url");
-        
-        //mock the request in this unit test since it builds URLs based on rest controller. 
+
+        //mock the request in this unit test since it builds URLs based on rest controller.
         MockHttpServletRequest request = MockMvcRequestBuilders.get("http://example.com/").buildRequest(new MockServletContext());
         final RequestAttributes requestAttributes = new ServletRequestAttributes(request);
         RequestContextHolder.setRequestAttributes(requestAttributes, true);
-        
+
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
-        when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));                       
+        when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
         when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
-                
+
         //wrap what we are testing into a Callable task
         Callable<ResponseEntity<ResourceSupport>> task = () -> fileController.generateDownloadLink(bucketName, filename);
-        
+
         //create the task n times
         int threadCount = 500;
         List<Callable<ResponseEntity<ResourceSupport>>> tasks = Collections.nCopies(threadCount, task);
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-        
+
         //call the tasks and save the responses
         List<Future<ResponseEntity<ResourceSupport>>> futures = executorService.invokeAll(tasks);
         List<ResponseEntity<ResourceSupport>> resultList = new ArrayList<>(futures.size());
-        
+
         //get all the futures
         for (Future<ResponseEntity<ResourceSupport>> future : futures) {
             // Throws an exception if an exception was thrown by the task.
@@ -533,14 +522,11 @@ public class FileControllerTest {
         }
         Assert.assertEquals(threadCount, futures.size());
         verify(this.downloadController, atMost(1)).generateDownload(any(), anyString(), any());
-        
+
     }
-    
+
     private static SecureFileEntity mockSecureFile(MockMultipartFile file) {
         final SecureFileEntity fileEntity = mock(SecureFileEntity.class);
-        when(fileEntity.getFilename()).thenReturn(file.getOriginalFilename());
-        when(fileEntity.getContentType()).thenReturn(file.getContentType());
-        when(fileEntity.getLength()).thenReturn(file.getSize());
         return fileEntity;
     }
 
