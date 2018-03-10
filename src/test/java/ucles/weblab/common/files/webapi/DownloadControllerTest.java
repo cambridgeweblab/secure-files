@@ -4,7 +4,7 @@ import com.google.common.net.HttpHeaders;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +15,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.Ignore;
 import org.springframework.mock.web.MockMultipartFile;
 import ucles.weblab.common.files.blob.api.BlobStoreResult;
 import ucles.weblab.common.files.domain.SecureFile;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.common.files.domain.SecureFileEntity;
 
-import static java.time.ZoneOffset.UTC;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertArrayEquals;
@@ -39,53 +37,53 @@ import static ucles.weblab.common.test.webapi.WebTestSupport.setUpRequestContext
  */
 @RunWith(MockitoJUnitRunner.class)
 public class DownloadControllerTest {
-    
+
     private DownloadController downloadController;
     private FileDownloadCacheInMemory inMemoryCache;
     @Before
     public void setUp() {
         setUpRequestContext();
-        
+
         inMemoryCache = new FileDownloadCacheInMemory();
         inMemoryCache.configureCacheExpiry(3600);
-        
+
         downloadController = new DownloadController(inMemoryCache);
-        
+
     }
 
-    @Test    
+    @Test
     public void testDownloadCacheWorks() {
         byte[] content = new byte[] { 1, 5, 3, 8, 1, 7, 3, 9, 4, 6, 7 };
         MediaType contentType = MediaType.IMAGE_GIF;
         String filename = "nonsense picture.gif";
-        
+
         UUID id = UUID.randomUUID();
         Clock clock = Clock.systemUTC();
         Instant pt = Instant.now(clock).plus(Duration.ofSeconds(120));
         PendingDownload pd = new PendingDownload(contentType, filename, content, pt, URI.create("www.url.com"));
-        
+
         String cacheKey = inMemoryCache.createCacheKey(id, "collection", filename);
         Optional<BlobStoreResult> put = inMemoryCache.put(id, "collection", pd);
-        
+
         SecureFileEntity secureFileEntity = mockSecureFile(filename);
-                              
+
         final URI uri = downloadController.generateDownload(id, filename, secureFileEntity);
         assertTrue("The URI should be set", uri.toString().startsWith("http://localhost/downloads/"));
         final ResponseEntity<byte[]> response = downloadController.fetchPreviouslyGeneratedDownload("collection", id.toString(), filename);
         assertEquals("Should return 200 OK", HttpStatus.OK, response.getStatusCode());
-        
-        //wont work with s3 implementation as there is no content passed 
+
+        //wont work with s3 implementation as there is no content passed
         assertArrayEquals("Expect content returned", content, response.getBody());
         assertFalse("Must not have no-cache", response.getHeaders().getCacheControl().contains("no-cache"));
         assertFalse("Must not have no-store", response.getHeaders().getCacheControl().contains("no-store"));
         assertEquals("Expect content type returned", contentType, response.getHeaders().getContentType());
-        
+
         //an assert on the content length will not work with an external link
         assertEquals("Expect content length returned", (long) content.length, response.getHeaders().getContentLength());
         assertThat("Expect filename return", response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION), contains(containsString(filename)));
         assertThat("Expect filename to be quoted", response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION), contains(containsString('"' + filename + '"')));
     }
-    
+
     /**
      * Creates a SecureFile entity with the details of the mock multipart file provided.
      *
@@ -109,8 +107,8 @@ public class DownloadControllerTest {
     public static SecureFileEntity mockSecureFile(final String filename) {
         final SecureFileEntity file = mock(SecureFileEntity.class);
         when(file.getFilename()).thenReturn(filename);
-        when(file.getContentType()).thenReturn(MediaType.IMAGE_GIF.toString());
-        when(file.getPlainData()).thenReturn(new byte[] { 1, 5, 3, 8, 1, 7, 3, 9, 4, 6, 7 });
+//        when(file.getContentType()).thenReturn(MediaType.IMAGE_GIF.toString());
+//        when(file.getPlainData()).thenReturn(new byte[] { 1, 5, 3, 8, 1, 7, 3, 9, 4, 6, 7 });
         return file;
     }
 
@@ -134,7 +132,7 @@ public class DownloadControllerTest {
         when(collection.getPurgeInstant()).thenReturn(Optional.empty());
         return collection;
     }
-    
+
     class SecureFileCollectionTestVO implements SecureFileCollectionEntity {
 
         @Override
@@ -156,17 +154,17 @@ public class DownloadControllerTest {
         public String getBucket() {
             return deriveBucket(getDisplayName());
         }
-        
+
     }
-    
+
     class SecureFileTestVO implements SecureFileEntity {
 
         private String contentType;
         private String fileName;
-        private String notes;   
+        private String notes;
         private int length;
         private byte[] data;
-        
+
         public SecureFileTestVO(String contentType, String fileName, String notes, int length, byte[] data) {
             this.contentType = contentType;
             this.fileName = fileName;
@@ -174,12 +172,12 @@ public class DownloadControllerTest {
             this.length = length;
             this.data = data;
         }
-        
+
         @Override
         public Instant getCreatedDate() {
             return Instant.now();
         }
-        
+
         @Override
         public SecureFileCollectionEntity getCollection() {
             return new SecureFileCollectionTestVO();
@@ -234,6 +232,6 @@ public class DownloadControllerTest {
         public byte[] getPlainData() {
             return data;
         }
-        
+
     }
 }
