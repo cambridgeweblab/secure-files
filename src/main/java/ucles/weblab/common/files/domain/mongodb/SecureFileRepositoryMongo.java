@@ -7,6 +7,7 @@ import com.mongodb.gridfs.GridFSInputFile;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import ucles.weblab.common.files.domain.EncryptionService;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
@@ -27,12 +28,15 @@ import static java.util.stream.Collectors.toList;
  */
 public class SecureFileRepositoryMongo implements SecureFileRepository {
     private final MongoOperations mongoOperations;
+//    private final GridFsTemplate gridFsTemplate;
+    private final MongoDbFactory mongoDbFactory;
     private final EncryptionService encryptionService;
     private String cipherName;
 
     @Autowired
-    public SecureFileRepositoryMongo(MongoOperations mongoOperations, EncryptionService encryptionService) {
+    public SecureFileRepositoryMongo(MongoOperations mongoOperations, MongoDbFactory mongoDbFactory, EncryptionService encryptionService) {
         this.mongoOperations = mongoOperations;
+        this.mongoDbFactory = mongoDbFactory;
         this.encryptionService = encryptionService;
     }
 
@@ -45,17 +49,19 @@ public class SecureFileRepositoryMongo implements SecureFileRepository {
     public Optional<SecureFileEntityMongo> findOneByCollectionAndFilename(SecureFileCollectionEntity collection, String filename) {
         return mongoOperations.execute(db -> {
             final SecureFileCollectionEntityMongo bucket = (SecureFileCollectionEntityMongo) collection;
-            GridFS gridFS = new GridFS(db, bucket.getBucket());
+            GridFS gridFS = new GridFS(mongoDbFactory.getLegacyDb(), bucket.getBucket());
             return Optional.ofNullable(gridFS.findOne(filename)).map(f -> new SecureFileEntityMongo(bucket, f));
         });
     }
 
     @Override
     public SecureFileEntityMongo save(SecureFileEntity secureFile) {
+
+
         if (secureFile.isNew()) {
             return mongoOperations.execute(db -> {
                 final SecureFileCollectionEntityMongo bucket = (SecureFileCollectionEntityMongo) secureFile.getCollection();
-                final GridFS gridFS = new GridFS(db, bucket.getBucket());
+                final GridFS gridFS = new GridFS(mongoDbFactory.getLegacyDb(), bucket.getBucket());
                 ObjectId oid = new ObjectId();
                 final byte[] encryptedData = encryptionService.encrypt(cipherName, oid.toByteArray(), secureFile.getPlainData());
                 final GridFSInputFile file = gridFS.createFile(new ByteArrayInputStream(encryptedData), secureFile.getFilename(), true);
@@ -84,7 +90,7 @@ public class SecureFileRepositoryMongo implements SecureFileRepository {
     public Collection<SecureFileEntityMongo> findAllByCollection(SecureFileCollectionEntity collection) {
         return mongoOperations.execute(db -> {
             final SecureFileCollectionEntityMongo bucket = (SecureFileCollectionEntityMongo) collection;
-            GridFS gridFS = new GridFS(db, bucket.getBucket());
+            GridFS gridFS = new GridFS(mongoDbFactory.getLegacyDb(), bucket.getBucket());
             // Can't use GridFS.getFileList() as it does not call GridFS._fix()
             // Have to instead use GridFS.find() which does.
             return gridFS.find(new BasicDBObject(), new BasicDBObject("filename", 1)).stream()
@@ -96,9 +102,8 @@ public class SecureFileRepositoryMongo implements SecureFileRepository {
     @Override
     public void delete(SecureFileEntity file) {
         mongoOperations.execute(db -> {
-            GridFS gridFS = null;
             final SecureFileCollectionEntityMongo bucket = (SecureFileCollectionEntityMongo) file.getCollection();
-            gridFS = new GridFS(db, bucket.getBucket());
+            GridFS gridFS = new GridFS(mongoDbFactory.getLegacyDb(), bucket.getBucket());
             gridFS.remove(file.getFilename());
             return null;
         });

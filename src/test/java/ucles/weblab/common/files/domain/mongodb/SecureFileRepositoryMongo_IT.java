@@ -5,12 +5,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
@@ -68,8 +69,8 @@ public class SecureFileRepositoryMongo_IT {
         }
 
         @Bean
-        public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, EncryptionService encryptionService) {
-            return new SecureFileRepositoryMongo(mongoOperations, encryptionService);
+        public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, MongoDbFactory mongoDbFactory, EncryptionService encryptionService) {
+            return new SecureFileRepositoryMongo(mongoOperations, mongoDbFactory, encryptionService);
         }
 
         @Bean
