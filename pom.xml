@@ -9,6 +9,12 @@
     <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <parent>
+        <groupId>ucles.weblab</groupId>
+        <artifactId>weblab-common-java</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
+    </parent>
+
     <properties>
         <common-java.version>2.0.0-SNAPSHOT</common-java.version>
         <java.version>1.8</java.version>
@@ -17,60 +23,6 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>maven-s3-release-repo</id>
-            <name>AWS Release Repository</name>
-            <url>s3://mvnrepository.ucles.org.uk/releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>maven-s3-snapshot-repo</id>
-            <name>AWS Snapshot Repository</name>
-            <url>s3://mvnrepository.ucles.org.uk/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
-    <repositories>
-        <repository>
-            <id>maven-s3-release-repo</id>
-            <name>AWS Release Repository</name>
-            <url>http://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/releases</url>
-        </repository>
-        <repository>
-            <id>maven-s3-snapshot-repo</id>
-            <name>AWS Snapshot Repository</name>
-            <url>http://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/snapshots</url>
-            <snapshots/>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>maven-s3-release-repo</id>
-            <name>AWS Release Repository</name>
-            <url>http://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/releases</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>maven-s3-snapshot-repo</id>
-            <name>AWS Snapshot Repository</name>
-            <url>http://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/snapshots</url>
-            <snapshots/>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- WEBLAB COMMON -->
-            <dependency>
-                <groupId>ucles.weblab</groupId>
-                <artifactId>weblab-common-java</artifactId>
-                <version>${common-java.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -164,7 +116,6 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.187</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -264,11 +215,6 @@
                 </dependencies>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.20</version>
-            </plugin>
-            <plugin>
                 <groupId>org.gaul</groupId>
                 <artifactId>modernizer-maven-plugin</artifactId>
                 <version>1.3.0</version>
@@ -292,7 +238,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.18.1</version>
                 <executions>
                     <execution>
                         <id>integration-test</id>
@@ -330,7 +275,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
-                            <version>2.20</version>
                             <configuration>
                                 <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                 <reportsDirectory>shippable/testresults</reportsDirectory>
