@@ -12,7 +12,7 @@ import java.util.Collection;
  */
 public interface SecureFileCollectionRepositoryJpa extends Repository<SecureFileCollectionEntityJpa, String>, SecureFileCollectionRepository {
     @Override
-    SecureFileCollectionEntityJpa findOne(String id);
+    SecureFileCollectionEntityJpa findById(String id);
 
     @Override
     SecureFileCollectionEntityJpa save(SecureFileCollectionEntity s);

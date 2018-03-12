@@ -21,34 +21,34 @@ import ucles.weblab.common.files.domain.SecureFileCollectionRepository;
 public class SecureFileCollectionRepositoryS3 implements SecureFileCollectionRepository {
     private static final String NOT_SUPPORTED_YET = "Not supported yet.";
     private final BlobStoreService blobStoreService;
-    
+
     @Autowired
     public SecureFileCollectionRepositoryS3(BlobStoreService blobStoreService) {
         this.blobStoreService = blobStoreService;
     }
-    
+
     @Override
-    public SecureFileCollectionEntity findOne(String id) {
+    public SecureFileCollectionEntity findById(String id) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
-     * Save a collection into S3. A collection is a group of files. 
-     * 
+     * Save a collection into S3. A collection is a group of files.
+     *
      * @param s
-     * @return 
+     * @return
      */
     @Override
     public SecureFileCollectionEntity save(SecureFileCollectionEntity s) {
         String rootPath = s.getBucket();
         BlobId blobId = new BlobId(s.getId());
         byte[] data = new byte[1];
-        
+
         try {
             Optional<BlobStoreResult> blobStoreResult = blobStoreService.putBlob(blobId, rootPath, data, s.getPurgeInstant().get());
-            
+
             SecureFileCollectionEntityS3 entity = blobStoreResult.map(m -> new SecureFileCollectionEntityS3(m)).get();
-            
+
             return entity;
         } catch (BlobStoreException ex) {
             Logger.getLogger(SecureFileCollectionRepositoryS3.class.getName()).log(Level.SEVERE, "BlobStoreException thrown while saving entity", ex);
@@ -75,5 +75,5 @@ public class SecureFileCollectionRepositoryS3 implements SecureFileCollectionRep
     public Long removeByPurgeInstantBefore(Instant cutOff) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
 }

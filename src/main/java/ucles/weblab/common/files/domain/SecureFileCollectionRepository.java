@@ -15,7 +15,7 @@ import java.util.Collection;
  * @since 05/06/15
  */
 public interface SecureFileCollectionRepository {
-    SecureFileCollectionEntity findOne(String id); // Required for ResourceReaderRepositoryPopulator
+    SecureFileCollectionEntity findById(String id); // Required for ResourceReaderRepositoryPopulator
 
     SecureFileCollectionEntity save(SecureFileCollectionEntity s);
 

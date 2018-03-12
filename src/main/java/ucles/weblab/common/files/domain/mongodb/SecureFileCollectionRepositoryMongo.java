@@ -11,7 +11,7 @@ import java.util.Collection;
  */
 public interface SecureFileCollectionRepositoryMongo extends Repository<SecureFileCollectionEntityMongo, String>, SecureFileCollectionRepositoryMongoCustom, SecureFileCollectionRepository {
     @Override
-    SecureFileCollectionEntityMongo findOne(String id);
+    SecureFileCollectionEntityMongo findById(String id);
 
     @Override
     SecureFileCollectionEntityMongo save(SecureFileCollectionEntity s);
