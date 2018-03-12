@@ -3,6 +3,7 @@ package ucles.weblab.common.files.domain.jpa;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
 import ucles.weblab.common.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.common.files.domain.SecureFileEntity;
 import ucles.weblab.common.files.domain.SecureFileRepository;
@@ -32,6 +33,6 @@ public interface SecureFileRepositoryJpa extends SecureFileRepository, Repositor
 
     @Override
     @Modifying
-    @Query("delete from SecureFile f where f in (select sf from SecureFile sf WHERE sf.collection.purgeInstant < ?)")
-    Integer deleteByCollectionPurgeInstantBefore(Instant cutOff);
+    @Query("delete from SecureFile f where f in (select sf from SecureFile sf WHERE sf.collection.purgeInstant < :cutOff)")
+    Integer deleteByCollectionPurgeInstantBefore(@Param("cutOff") Instant cutOff);
 }
