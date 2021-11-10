@@ -236,7 +236,6 @@ public class FileController {
                 downloadCache.put(id, bucket, pd);
 
                 HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.valueOf(secureFile.getContentType()));
                 headers.setLocation(downloadController.generateDownload(id, bucket, secureFile));
                 final ResourceSupport resource = new ResourceSupport();
                 resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
