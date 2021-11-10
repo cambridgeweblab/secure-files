@@ -12,9 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ucles.weblab.common.webapi.*;
 import ucles.weblab.files.domain.SecureFileMetadataEntity;
 import ucles.weblab.files.domain.SecureFileMetadataRepository;
-import ucles.weblab.common.webapi.AccessAudited;
 import ucles.weblab.common.webapi.exception.ResourceNotFoundException;
 import ucles.weblab.files.domain.FilesFactory;
 import ucles.weblab.files.domain.SecureFile;
@@ -42,8 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 import static ucles.weblab.common.webapi.HateoasUtils.locationHeader;
 import static ucles.weblab.common.webapi.LinkRelation.SELF;
 
@@ -102,7 +100,7 @@ public class FileController {
         this.downloadCache = downloadCache;
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = APPLICATION_JSON_UTF8_VALUE)
+    @GetJson("/")
     @PreAuthorize(IS_AUTHENTICATED)
     public List<FileCollectionResource> listBuckets() {
         return secureFileCollectionRepository.findAll().stream()
@@ -110,7 +108,7 @@ public class FileController {
                 .collect(toList());
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
+    @PostJson(value = "/", produces = APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<FileCollectionResource> saveBucket(@RequestBody FileCollectionResource newBucket) {
         SecureFileCollection collectionDefinition = secureFileCollectionBuilder.get()
                 .displayName(newBucket.getDisplayName())
@@ -121,7 +119,7 @@ public class FileController {
         return new ResponseEntity<>(resource, locationHeader(resource), HttpStatus.CREATED);
     }
 
-    @RequestMapping(value = "/{bucket}/", method = RequestMethod.GET, produces = APPLICATION_JSON_UTF8_VALUE)
+    @GetJson("/{bucket}/")
     @AccessAudited
     public ResponseEntity<List<FileMetadataResource>> listFilesInBucket(@PathVariable String bucket) {
         SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
@@ -133,7 +131,7 @@ public class FileController {
                 .collect(toList()));
     }
 
-    @RequestMapping(value = "/{bucket}/{filename}/", method = RequestMethod.GET, produces = APPLICATION_JSON_UTF8_VALUE)
+    @GetJson("/{bucket}/{filename}/")
     @AccessAudited
     public ResponseEntity<FileMetadataResource> getFileMetadata(@PathVariable String bucket, @PathVariable String filename) {
         SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
@@ -147,7 +145,7 @@ public class FileController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @RequestMapping(value = "/{bucket}/{filename}/", method = RequestMethod.PUT, consumes = APPLICATION_JSON_UTF8_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
+    @PutJson(value = "/{bucket}/{filename}/", produces = APPLICATION_JSON_UTF8_VALUE)
     @AccessAudited
     public FileMetadataResource updateFileMetadata(@PathVariable String bucket, @PathVariable String filename, @RequestBody FileMetadataResource update) {
         SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
@@ -169,7 +167,7 @@ public class FileController {
         return fileMetadataResourceAssembler.toResource(secureFileRepository.save(file));
     }
 
-    @RequestMapping(value = "/{bucket}/{filename}/", method = RequestMethod.DELETE, produces = APPLICATION_JSON_UTF8_VALUE)
+    @DeleteMapping(value = "/{bucket}/{filename}/", produces = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @AccessAudited
     public void deleteUploadedFile(@PathVariable String bucket, @PathVariable String filename) {
@@ -183,7 +181,7 @@ public class FileController {
         secureFileRepository.delete(file);
     }
 
-    @RequestMapping(value = "/{bucket}/{filename}/preview/", method = RequestMethod.GET)
+    @GetMapping("/{bucket}/{filename}/preview/")
     @AccessAudited
     public ResponseEntity<byte[]> fetchFileContent(@PathVariable String bucket, @PathVariable String filename) {
         final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
@@ -198,14 +196,14 @@ public class FileController {
         return new ResponseEntity<>(file.getPlainData(), headers, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/{bucket}/{filename}/download/", method = RequestMethod.GET)
+    @GetMapping("/{bucket}/{filename}/download/")
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     public ResponseEntity<ResourceSupport> redirectToDownload(@PathVariable String bucket, @PathVariable String filename) {
         return redirectToDownload(bucket, filename, SecureFile::getPlainData);
     }
 
-    @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/", method = RequestMethod.GET)
+    @GetMapping("/{bucket}/{filename}/downloadEncrypted/")
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     public ResponseEntity<ResourceSupport> redirectToDownloadEncrypted(@PathVariable String bucket, @PathVariable String filename) {
@@ -250,8 +248,7 @@ public class FileController {
     /**
      * The first point of call when the user clicks on the download.
      */
-    @RequestMapping(value = "/{bucket}/{filename}/download/",
-                    method = RequestMethod.POST,
+    @PostMapping(value = "/{bucket}/{filename}/download/",
                     produces = APPLICATION_JSON_UTF8_VALUE)
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
@@ -263,8 +260,7 @@ public class FileController {
     /**
      * The first point of call when the user clicks on the download encrypted file.
      */
-    @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/",
-            method = RequestMethod.POST,
+    @PostMapping(value = "/{bucket}/{filename}/downloadEncrypted/",
             produces = APPLICATION_JSON_UTF8_VALUE)
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
@@ -351,7 +347,7 @@ public class FileController {
         }
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_UTF8_VALUE)
+    @PostJson(value = "/", produces = APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<FileMetadataResource> uploadFileToBucket(@RequestParam String collection, @RequestParam(required = false) String notes, @RequestParam MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
