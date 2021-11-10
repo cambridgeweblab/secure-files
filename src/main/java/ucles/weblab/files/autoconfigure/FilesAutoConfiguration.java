@@ -40,6 +40,7 @@ public class FilesAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(SecureFileCollectionService.class)
     public SecureFileCollectionService secureFileCollectionService(SecureFileCollectionRepository secureFileCollectionRepository, SecureFileRepository secureFileRepository) {
         return new AutoPurgeSecureFileCollectionServiceImpl(secureFileCollectionRepository, secureFileRepository);
     }

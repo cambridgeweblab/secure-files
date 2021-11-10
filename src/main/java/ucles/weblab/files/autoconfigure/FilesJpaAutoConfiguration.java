@@ -3,6 +3,7 @@ package ucles.weblab.files.autoconfigure;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -32,6 +33,8 @@ import javax.sql.DataSource;
 @EnableJpaRepositories(basePackageClasses = {SecureFileCollectionRepositoryJpa.class})
 @EntityScan(basePackageClasses = {SecureFileEntityJpa.class, Jsr310JpaConverters.class})
 public class FilesJpaAutoConfiguration {
+
+    @ConditionalOnMissingBean(FilesFactory.class)
     @Bean
     public FilesFactory filesFactoryJpa() {
         return new FilesFactoryJpa();
