@@ -79,11 +79,8 @@ public class FileController_IT extends AbstractRestController_IT {
     private DownloadController downloadController;
 
     @Configuration
-    @EnableJpaRepositories(basePackageClasses = {SecureFileCollectionRepositoryJpa.class})
-    @EntityScan(basePackageClasses = {SecureFileEntityJpa.class, Jsr310JpaConverters.class})
-    @ComponentScan(basePackageClasses = {FileController.class, DownloadController.class})
     @Import({ConfigurableEntitySupport.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, FilesConverters.class, FilesBuilders.class})
-    @EnableAutoConfiguration(exclude = FilesMongoAutoConfiguration.class)
+    @EnableAutoConfiguration(exclude = {FilesMongoAutoConfiguration.class, MongoAutoConfiguration.class})
     public static class Config {
         @Bean
         public FilesFactory filesFactoryJpa() {
