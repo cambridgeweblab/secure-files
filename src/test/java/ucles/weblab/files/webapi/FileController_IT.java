@@ -5,16 +5,13 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.multipart.MultipartException;
@@ -25,8 +22,6 @@ import ucles.weblab.common.domain.ConfigurableEntitySupport;
 import ucles.weblab.files.autoconfigure.FilesMongoAutoConfiguration;
 import ucles.weblab.files.domain.*;
 import ucles.weblab.files.domain.jpa.FilesFactoryJpa;
-import ucles.weblab.files.domain.jpa.SecureFileCollectionRepositoryJpa;
-import ucles.weblab.files.domain.jpa.SecureFileEntityJpa;
 import ucles.weblab.files.webapi.converter.FilesConverters;
 import ucles.weblab.files.webapi.resource.FileCollectionResource;
 import ucles.weblab.common.test.webapi.AbstractRestController_IT;
@@ -38,13 +33,9 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import javax.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.is;
@@ -61,6 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * @since 25/06/15
  */
+@SuppressWarnings("ConstantConditions")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 //@WebIntegrationTest(value = "classpath:/public", randomPort = true)
@@ -71,12 +63,6 @@ public class FileController_IT extends AbstractRestController_IT {
     private static final String BASE64_RESOURCE_NAME_2 = "base64-post-error500.crlf.txt";
     private static final String BASE64_RESOURCE_NAME_3 = "base64-post-error400.crlf.txt";
     private static final String IMAGE_RESOURCE_PATH = "beautiful_st_ives_cornwall_england_uk-1532356.jpg";
-
-    @Autowired
-    private FileDownloadCache fileDownloadCache;
-
-    @Autowired
-    private DownloadController downloadController;
 
     @Configuration
     @Import({ConfigurableEntitySupport.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, FilesConverters.class, FilesBuilders.class})
@@ -108,7 +94,7 @@ public class FileController_IT extends AbstractRestController_IT {
         }
 
         @Bean
-        FileDownloadCache fileDownloadCache() {
+        FileDownloadCache<UUID, PendingDownload> fileDownloadCache() {
             return new FileDownloadCacheInMemory();
         }
     }
@@ -148,7 +134,7 @@ public class FileController_IT extends AbstractRestController_IT {
                                 imageLocation.complete(loc);
                     })
                     .andDo(result -> {
-                                String loc = ((List<String>) JsonPath.read(result.getResponse().getContentAsString(),"$.links[?(@.rel=='enclosure')].href")).get(0);
+                                String loc = JsonPath.<List<String>>read(result.getResponse().getContentAsString(),"$.links[?(@.rel=='enclosure')].href").get(0);
                                 System.out.println("imageDownload: " + loc);
                                 imageDownload.complete(URI.create(loc));
                     });
