@@ -23,19 +23,6 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
 
-    <distributionManagement>
-        <repository>
-            <id>maven-s3-release-repo</id>
-            <name>AWS Release Repository</name>
-            <url>s3://mvnrepository.ucles.org.uk/releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>maven-s3-snapshot-repo</id>
-            <name>AWS Snapshot Repository</name>
-            <url>s3://mvnrepository.ucles.org.uk/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <dependencyManagement>
         <dependencies>
             <!-- WEBLAB COMMON -->
@@ -294,37 +281,4 @@
             </plugin>
         </plugins>
     </reporting>
-
-    <profiles>
-        <profile>
-            <id>ucles</id>
-            <repositories>
-                <repository>
-                    <id>maven-s3-release-repo</id>
-                    <name>AWS Release Repository</name>
-                    <url>https://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/releases</url>
-                </repository>
-                <repository>
-                    <id>maven-s3-snapshot-repo</id>
-                    <name>AWS Snapshot Repository</name>
-                    <url>https://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/snapshots</url>
-                    <snapshots/>
-                </repository>
-            </repositories>
-
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>maven-s3-release-repo</id>
-                    <name>AWS Release Repository</name>
-                    <url>https://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/releases</url>
-                </pluginRepository>
-                <pluginRepository>
-                    <id>maven-s3-snapshot-repo</id>
-                    <name>AWS Snapshot Repository</name>
-                    <url>https://mvnrepository.ucles.org.uk.s3-website-eu-west-1.amazonaws.com/snapshots</url>
-                    <snapshots/>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-    </profiles>
 </project>
