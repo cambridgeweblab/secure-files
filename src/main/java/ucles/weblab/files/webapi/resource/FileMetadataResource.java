@@ -1,14 +1,15 @@
 package ucles.weblab.files.webapi.resource;
 
 import java.time.Instant;
-import org.springframework.hateoas.ResourceSupport;
+
+import org.springframework.hateoas.RepresentationModel;
 
 /**
  * View model, designed for JSON serialization, of a resource representing a file uploaded to the system.
  *
  * @since 19/03/15
  */
-public class FileMetadataResource extends ResourceSupport {
+public class FileMetadataResource extends RepresentationModel<FileMetadataResource> {
     private String filename;
     private String contentType;
     private long length;

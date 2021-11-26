@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.ResourceSupport;
+import org.springframework.hateoas.RepresentationModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -106,7 +106,7 @@ public class FileController {
     @PreAuthorize(IS_AUTHENTICATED)
     public List<FileCollectionResource> listBuckets() {
         return secureFileCollectionRepository.findAll().stream()
-                .map(fileCollectionResourceAssembler::toResource)
+                .map(fileCollectionResourceAssembler::toModel)
                 .collect(toList());
     }
 
@@ -117,7 +117,7 @@ public class FileController {
                 .purgeInstant(Optional.ofNullable(newBucket.getPurgeInstant()))
                 .get();
         final SecureFileCollectionEntity savedCollection = secureFileCollectionRepository.save(filesFactory.newSecureFileCollection(collectionDefinition));
-        final FileCollectionResource resource = fileCollectionResourceAssembler.toResource(savedCollection);
+        final FileCollectionResource resource = fileCollectionResourceAssembler.toModel(savedCollection);
         return new ResponseEntity<>(resource, locationHeader(resource), HttpStatus.CREATED);
     }
 
@@ -129,7 +129,7 @@ public class FileController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(secureFileMetadataRepository.findAllByCollection(collection).stream()
-                .map(fileMetadataResourceAssembler::toResource)
+                .map(fileMetadataResourceAssembler::toModel)
                 .collect(toList()));
     }
 
@@ -143,7 +143,7 @@ public class FileController {
 
         final Optional<? extends SecureFileMetadataEntity> found = secureFileMetadataRepository.findOneByCollectionAndFilename(collection, filename);
         return found
-                .map(secureFile -> ResponseEntity.ok(fileMetadataResourceAssembler.toResource(secureFile)))
+                .map(secureFile -> ResponseEntity.ok(fileMetadataResourceAssembler.toModel(secureFile)))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
@@ -166,7 +166,7 @@ public class FileController {
         if (update.getNotes() != null) {
             file.setNotes(update.getNotes());
         }
-        return fileMetadataResourceAssembler.toResource(secureFileRepository.save(file));
+        return fileMetadataResourceAssembler.toModel(secureFileRepository.save(file));
     }
 
     @RequestMapping(value = "/{bucket}/{filename}/", method = RequestMethod.DELETE, produces = APPLICATION_JSON_UTF8_VALUE)
@@ -201,18 +201,18 @@ public class FileController {
     @RequestMapping(value = "/{bucket}/{filename}/download/", method = RequestMethod.GET)
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
-    public ResponseEntity<ResourceSupport> redirectToDownload(@PathVariable String bucket, @PathVariable String filename) {
+    public ResponseEntity<? extends RepresentationModel<?>> redirectToDownload(@PathVariable String bucket, @PathVariable String filename) {
         return redirectToDownload(bucket, filename, SecureFile::getPlainData);
     }
 
     @RequestMapping(value = "/{bucket}/{filename}/downloadEncrypted/", method = RequestMethod.GET)
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
-    public ResponseEntity<ResourceSupport> redirectToDownloadEncrypted(@PathVariable String bucket, @PathVariable String filename) {
+    public ResponseEntity<? extends RepresentationModel<?>> redirectToDownloadEncrypted(@PathVariable String bucket, @PathVariable String filename) {
         return redirectToDownload(bucket, filename, SecureFile::getEncryptedData);
     }
 
-    private ResponseEntity<ResourceSupport> redirectToDownload(@PathVariable String bucket, @PathVariable String filename, Function<SecureFile, byte[]> extractData) {
+    private ResponseEntity<? extends RepresentationModel<?>> redirectToDownload(@PathVariable String bucket, @PathVariable String filename, Function<SecureFile, byte[]> extractData) {
         final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
         if (collection == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -237,7 +237,7 @@ public class FileController {
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setLocation(downloadController.generateDownload(id, bucket, secureFile));
-                final ResourceSupport resource = new ResourceSupport();
+                final RepresentationModel<?> resource = new RepresentationModel();
                 resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
                 return new ResponseEntity<>(resource, headers, HttpStatus.SEE_OTHER);
             } catch (TransientDataAccessResourceException e) {
@@ -254,7 +254,7 @@ public class FileController {
                     produces = APPLICATION_JSON_UTF8_VALUE)
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
-    public ResponseEntity<ResourceSupport> generateDownloadLink(@PathVariable String bucket,
+    public ResponseEntity<RepresentationModel<?>> generateDownloadLink(@PathVariable String bucket,
                                                                 @PathVariable String filename) {
         return generateDownloadLink(bucket, filename, false);
     }
@@ -268,12 +268,12 @@ public class FileController {
     @PreAuthorize(IS_AUTHENTICATED)
     @AccessAudited
     @CrossOrigin
-    public ResponseEntity<ResourceSupport> generateEncryptedDownloadLink(@PathVariable String bucket,
+    public ResponseEntity<RepresentationModel<?>> generateEncryptedDownloadLink(@PathVariable String bucket,
                                                                          @PathVariable String filename) {
         return generateDownloadLink(bucket, filename, true);
     }
 
-    private ResponseEntity<ResourceSupport> generateDownloadLink(@PathVariable String bucket, @PathVariable String filename, boolean encrypted) {
+    private ResponseEntity<RepresentationModel<?>> generateDownloadLink(@PathVariable String bucket, @PathVariable String filename, boolean encrypted) {
         //get the collection name
         final SecureFileCollectionEntity collection = secureFileCollectionRepository.findOneByBucket(bucket);
         if (collection == null) {
@@ -368,11 +368,11 @@ public class FileController {
                 .get();
         final SecureFileEntity toSave = filesFactory.newSecureFile(bucket, fileDefinition);
         final SecureFileEntity savedFile = secureFileRepository.save(toSave);
-        final FileMetadataResource resource = fileMetadataResourceAssembler.toResource(savedFile);
+        final FileMetadataResource resource = fileMetadataResourceAssembler.toModel(savedFile);
         return new ResponseEntity<>(resource, locationHeader(resource), HttpStatus.CREATED);
     }
 
-    private ResponseEntity<ResourceSupport> getRedirectResponseOrNotFound(URI location) {
+    private ResponseEntity<RepresentationModel<?>> getRedirectResponseOrNotFound(URI location) {
         if (location == null) {
             log.info("Location was never found, returning 404");
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -380,7 +380,7 @@ public class FileController {
             log.info("Location was found, setting headers");
             HttpHeaders headers = new HttpHeaders();
             headers.setLocation(location);
-            final ResourceSupport resource = new ResourceSupport();
+            final RepresentationModel<?> resource = new RepresentationModel<>();
             resource.add(new Link(headers.getLocation().toASCIIString(), SELF.rel()));
             return new ResponseEntity<>(resource, headers, HttpStatus.CREATED);
         }

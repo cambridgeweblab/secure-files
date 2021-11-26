@@ -2,7 +2,7 @@ package ucles.weblab.files.webapi.resource;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.springframework.hateoas.ResourceSupport;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.time.Instant;
 
@@ -12,7 +12,7 @@ import java.time.Instant;
  * @since 19/03/15
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FileCollectionResource extends ResourceSupport {
+public class FileCollectionResource extends RepresentationModel<FileCollectionResource> {
     private String displayName;
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant purgeInstant;

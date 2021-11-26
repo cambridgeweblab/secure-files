@@ -2,6 +2,7 @@ package ucles.weblab.files.webapi.converter;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.hateoas.IanaLinkRelations;
 import ucles.weblab.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.files.webapi.resource.FileCollectionResource;
 
@@ -31,9 +32,10 @@ public class FileCollectionResourceAssemblerTest {
         when(collection.getDisplayName()).thenReturn("plum stone");
         when(collection.getPurgeInstant()).thenReturn(Optional.of(Instant.now()));
         when(collection.getBucket()).thenReturn("fs.plumstone");
-        final FileCollectionResource result = resourceAssembler.toResource(collection);
+        final FileCollectionResource result = resourceAssembler.toModel(collection);
 
-        assertEquals("The self rel should be set", URI.create("http://localhost/api/files/fs.plumstone/"), URI.create(result.getId().getHref()));
+        assertEquals("The self rel should be set", URI.create("http://localhost/api/files/fs.plumstone/"),
+                URI.create(result.getLink(IanaLinkRelations.SELF).orElseThrow().getHref()));
         assertEquals("The display name should be set", collection.getDisplayName(), result.getDisplayName());
         assertEquals("The purge instant should be set", collection.getPurgeInstant().get(), result.getPurgeInstant());
 

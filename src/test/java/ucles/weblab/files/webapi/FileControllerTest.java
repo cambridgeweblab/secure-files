@@ -10,8 +10,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.ResourceSupport;
+import org.springframework.hateoas.RepresentationModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -128,7 +129,7 @@ public class FileControllerTest {
         when(mockSecureFileCollectionRepository.findOneByDisplayName(collectionName)).thenReturn(collection);
         when(mockFilesFactory.newSecureFile(same(collection), secureFileCaptor.capture())).thenReturn(fileToSave);
         when(mockSecureFileRepository.save(same(fileToSave))).thenReturn(savedFile);
-        when(fileMetadataResourceAssembler.toResource(same(savedFile))).thenReturn(resource);
+        when(fileMetadataResourceAssembler.toModel(same(savedFile))).thenReturn(resource);
 
         final ResponseEntity<FileMetadataResource> result = fileController.uploadFileToBucket(collectionName, notes, file);
         assertEquals("Should use filename", file.getOriginalFilename(), secureFileCaptor.getValue().getFilename());
@@ -175,8 +176,8 @@ public class FileControllerTest {
         resource2.add(new Link("urn:bucket2").withSelfRel());
 
         when(mockSecureFileCollectionRepository.findAll()).thenReturn((Collection) Arrays.asList(bucket1, bucket2));
-        when(fileCollectionResourceAssembler.toResource(same(bucket1))).thenReturn(resource1);
-        when(fileCollectionResourceAssembler.toResource(same(bucket2))).thenReturn(resource2);
+        when(fileCollectionResourceAssembler.toModel(same(bucket1))).thenReturn(resource1);
+        when(fileCollectionResourceAssembler.toModel(same(bucket2))).thenReturn(resource2);
 
         final List<FileCollectionResource> result = fileController.listBuckets();
         assertThat("Should return the two expected resources", result, containsInAnyOrder(resource1, resource2));
@@ -194,7 +195,7 @@ public class FileControllerTest {
 
         when(mockFilesFactory.newSecureFileCollection(argThat(isCollectionDefinition(bucketName, instant)))).thenReturn(bucketToSave);
         when(mockSecureFileCollectionRepository.save(same(bucketToSave))).thenReturn(savedBucket);
-        when(fileCollectionResourceAssembler.toResource(same(savedBucket))).thenReturn(savedResource);
+        when(fileCollectionResourceAssembler.toModel(same(savedBucket))).thenReturn(savedResource);
 
         final ResponseEntity<FileCollectionResource> result = fileController.saveBucket(newBucket);
         assertEquals("Should return 201 Created", HttpStatus.CREATED, result.getStatusCode());
@@ -213,8 +214,8 @@ public class FileControllerTest {
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileMetadataRepository.findAllByCollection(collection)).thenReturn((Collection) Arrays.asList(file1, file2));
-        when(fileMetadataResourceAssembler.toResource(same(file1))).thenReturn(resource1);
-        when(fileMetadataResourceAssembler.toResource(same(file2))).thenReturn(resource2);
+        when(fileMetadataResourceAssembler.toModel(same(file1))).thenReturn(resource1);
+        when(fileMetadataResourceAssembler.toModel(same(file2))).thenReturn(resource2);
 
         final ResponseEntity<List<FileMetadataResource>> result = fileController.listFilesInBucket(bucketName);
         assertThat("Should return the two expected files", result.getBody(), containsInAnyOrder(resource1, resource2));
@@ -239,7 +240,7 @@ public class FileControllerTest {
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileMetadataRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
-        when(fileMetadataResourceAssembler.toResource(same(file))).thenReturn(resource);
+        when(fileMetadataResourceAssembler.toModel(same(file))).thenReturn(resource);
         final ResponseEntity<FileMetadataResource> result = fileController.getFileMetadata(bucketName, filename);
         assertEquals("Should return 200 OK", HttpStatus.OK, result.getStatusCode());
         assertEquals("Should return the resource", resource, result.getBody());
@@ -297,7 +298,7 @@ public class FileControllerTest {
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
         when(mockSecureFileRepository.save(same(file))).thenReturn(file);
-        when(fileMetadataResourceAssembler.toResource(same(file))).thenReturn(resource);
+        when(fileMetadataResourceAssembler.toModel(same(file))).thenReturn(resource);
 
         final FileMetadataResource result = fileController.updateFileMetadata(bucketName, filename, update);
 
@@ -318,7 +319,7 @@ public class FileControllerTest {
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
         when(mockSecureFileRepository.save(same(file))).thenReturn(file);
-        when(fileMetadataResourceAssembler.toResource(same(file))).thenReturn(resource);
+        when(fileMetadataResourceAssembler.toModel(same(file))).thenReturn(resource);
 
         final FileMetadataResource result = fileController.updateFileMetadata(bucketName, filename, update);
 
@@ -339,7 +340,7 @@ public class FileControllerTest {
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
         when(mockSecureFileRepository.save(same(file))).thenReturn(file);
-        when(fileMetadataResourceAssembler.toResource(same(file))).thenReturn(resource);
+        when(fileMetadataResourceAssembler.toModel(same(file))).thenReturn(resource);
 
         final FileMetadataResource result = fileController.updateFileMetadata(bucketName, filename, update);
 
@@ -361,7 +362,7 @@ public class FileControllerTest {
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn((Optional) Optional.of(file));
         when(mockSecureFileRepository.save(same(file))).thenReturn(savedFile);
-        when(fileMetadataResourceAssembler.toResource(same(savedFile))).thenReturn(resource);
+        when(fileMetadataResourceAssembler.toModel(same(savedFile))).thenReturn(resource);
 
         final FileMetadataResource result = fileController.updateFileMetadata(bucketName, filename, update);
 
@@ -451,10 +452,10 @@ public class FileControllerTest {
 
         when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
 
-        final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
+        final ResponseEntity<RepresentationModel<?>> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 201 Created", HttpStatus.CREATED, result.getStatusCode());
         assertEquals("Should return a Location", result.getHeaders().getLocation(), downloadUri);
-        assertEquals("Should return a resource with self link", downloadUri, URI.create(result.getBody().getId().getHref()));
+        assertEquals("Should return a resource with self link", downloadUri, URI.create(result.getBody().getLink(IanaLinkRelations.SELF).orElseThrow().getHref()));
     }
 
     @Test
@@ -464,7 +465,7 @@ public class FileControllerTest {
         final String bucketName = collection.getBucket();
 
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(null);
-        final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
+        final ResponseEntity<RepresentationModel<?>> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
         verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
@@ -476,7 +477,7 @@ public class FileControllerTest {
         final String bucketName = collection.getBucket();
         when(mockSecureFileCollectionRepository.findOneByBucket(bucketName)).thenReturn(collection);
         when(mockSecureFileRepository.findOneByCollectionAndFilename(collection, filename)).thenReturn(Optional.empty());
-        final ResponseEntity<ResourceSupport> result = fileController.generateDownloadLink(bucketName, filename);
+        final ResponseEntity<RepresentationModel<?>> result = fileController.generateDownloadLink(bucketName, filename);
         assertEquals("Should return 404 Not Found", HttpStatus.NOT_FOUND, result.getStatusCode());
         verify(downloadController, never()).generateDownload(any(), anyString(), any());
     }
@@ -504,19 +505,19 @@ public class FileControllerTest {
         when(downloadController.generateDownload(any(), any(), any())).thenReturn(downloadUri);
 
         //wrap what we are testing into a Callable task
-        Callable<ResponseEntity<ResourceSupport>> task = () -> fileController.generateDownloadLink(bucketName, filename);
+        Callable<ResponseEntity<RepresentationModel<?>>> task = () -> fileController.generateDownloadLink(bucketName, filename);
 
         //create the task n times
         int threadCount = 500;
-        List<Callable<ResponseEntity<ResourceSupport>>> tasks = Collections.nCopies(threadCount, task);
+        List<Callable<ResponseEntity<RepresentationModel<?>>>> tasks = Collections.nCopies(threadCount, task);
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 
         //call the tasks and save the responses
-        List<Future<ResponseEntity<ResourceSupport>>> futures = executorService.invokeAll(tasks);
-        List<ResponseEntity<ResourceSupport>> resultList = new ArrayList<>(futures.size());
+        List<Future<ResponseEntity<RepresentationModel<?>>>> futures = executorService.invokeAll(tasks);
+        List<ResponseEntity<RepresentationModel<?>>> resultList = new ArrayList<>(futures.size());
 
         //get all the futures
-        for (Future<ResponseEntity<ResourceSupport>> future : futures) {
+        for (Future<ResponseEntity<RepresentationModel<?>>> future : futures) {
             // Throws an exception if an exception was thrown by the task.
             resultList.add(future.get());
         }

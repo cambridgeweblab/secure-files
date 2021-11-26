@@ -2,6 +2,7 @@ package ucles.weblab.files.webapi.converter;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.MediaType;
 import ucles.weblab.files.domain.SecureFileCollectionEntity;
 import ucles.weblab.files.domain.SecureFileEntity;
@@ -45,9 +46,10 @@ public class FileMetadataResourceAssemblerTest {
         when(fileEntity.getLength()).thenReturn(length);
         when(fileEntity.getNotes()).thenReturn(notes);
 
-        final FileMetadataResource result = resourceAssembler.toResource(fileEntity);
+        final FileMetadataResource result = resourceAssembler.toModel(fileEntity);
 
-        assertEquals("The self rel should be set", URI.create("http://localhost/api/files/fs.applecore/orangepeel.bin/"), URI.create(result.getId().getHref()));
+        assertEquals("The self rel should be set", URI.create("http://localhost/api/files/fs.applecore/orangepeel.bin/"),
+                URI.create(result.getLink(IanaLinkRelations.SELF).orElseThrow().getHref()));
         assertEquals("The filename should be set", filename, result.getFilename());
         assertEquals("The content type should be set", contentType, result.getContentType());
         assertEquals("The length should be set", length, result.getLength());

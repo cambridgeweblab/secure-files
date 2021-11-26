@@ -16,8 +16,9 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 /**
  * This controller serves out the actual downloads. They have a time-limited URI (30 seconds only) but must be
