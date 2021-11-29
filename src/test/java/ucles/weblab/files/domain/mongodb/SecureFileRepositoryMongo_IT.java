@@ -3,18 +3,22 @@ package ucles.weblab.files.domain.mongodb;
 import com.google.common.io.Resources;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 import ucles.weblab.files.domain.AesGcmEncryptionStrategy;
 import ucles.weblab.files.domain.AutoPurgeSecureFileCollectionServiceImpl;
@@ -52,9 +56,8 @@ import static org.junit.Assert.assertThat;
  *
  * @since 18/03/15
  */
-@Ignore("MongoDB not available in the environment") // TODO: make this detectable
-@RunWith(SpringRunner.class)
-@SpringBootTest
+@ExtendWith(SpringExtension.class)
+@DataMongoTest
 @Transactional
 public class SecureFileRepositoryMongo_IT {
     private static final String FILE_RESOURCE_PATH = "81672667_bus.jpg";
@@ -69,7 +72,7 @@ public class SecureFileRepositoryMongo_IT {
         }
 
         @Bean
-        public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, MongoDbFactory mongoDbFactory, EncryptionService encryptionService) {
+        public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, MongoDatabaseFactory mongoDbFactory, EncryptionService encryptionService) {
             return new SecureFileRepositoryMongo(mongoOperations, mongoDbFactory, encryptionService);
         }
 
@@ -119,7 +122,7 @@ public class SecureFileRepositoryMongo_IT {
 
     @Transactional
     @Test
-    @Ignore
+//    @Ignore
     public void testSecureFileRoundTrip() throws IOException {
         final byte[] originalData = Resources.toByteArray(getClass().getResource(FILE_RESOURCE_PATH));
         final SecureFileEntity newFile = newSecureFile(originalData);
