@@ -5,6 +5,7 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.hateoas.HypermediaAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -24,7 +25,7 @@ import ucles.weblab.files.domain.*;
 import ucles.weblab.files.domain.jpa.FilesFactoryJpa;
 import ucles.weblab.files.webapi.converter.FilesConverters;
 import ucles.weblab.files.webapi.resource.FileCollectionResource;
-import ucles.weblab.common.test.webapi.AbstractRestController_IT;
+import ucles.weblab.common.test.webapi.AbstractRestControllerIT;
 import ucles.weblab.common.multipart.webapi.jersey.JerseyMultipartResolver;
 
 import java.io.InputStream;
@@ -57,7 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 //@WebIntegrationTest(value = "classpath:/public", randomPort = true)
 @Transactional
-public class FileController_IT extends AbstractRestController_IT {
+public class FileController_IT extends AbstractRestControllerIT {
     /** This multipart resource MUST have CR LF line terminators, not just LF. */
     private static final String BASE64_RESOURCE_NAME_1 = "base64multipart.crlf.txt";
     private static final String BASE64_RESOURCE_NAME_2 = "base64-post-error500.crlf.txt";
@@ -66,7 +67,7 @@ public class FileController_IT extends AbstractRestController_IT {
 
     @Configuration
     @Import({ConfigurableEntitySupport.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, FilesConverters.class, FilesBuilders.class})
-    @EnableAutoConfiguration(exclude = {FilesMongoAutoConfiguration.class, MongoAutoConfiguration.class})
+    @EnableAutoConfiguration(exclude = {FilesMongoAutoConfiguration.class, MongoAutoConfiguration.class, HypermediaAutoConfiguration.class})
     public static class Config {
         @Bean
         public FilesFactory filesFactoryJpa() {
@@ -101,7 +102,7 @@ public class FileController_IT extends AbstractRestController_IT {
 
     @Test
     public void testUploadingBase64EncodedFile() throws Exception {
-        MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<String, String>() {{
+        MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<>() {{
             put("boundary", "----WebKitFormBoundaryrH2JPoateChY15Vo");
         }});
         final String collectionName = getClass().getSimpleName() + "-01";
@@ -180,7 +181,7 @@ public class FileController_IT extends AbstractRestController_IT {
      */
     @Test(expected = MultipartException.class)
     public void testFrontEndGeneratedUploadFailsDueToBoundaryFailure() throws Throwable {
-        MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<String, String>() {{
+        MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<>() {{
             put("boundary", "--FormDataObject0");
         }});
         final String collectionName = getClass().getSimpleName() + "-02";
@@ -226,7 +227,7 @@ public class FileController_IT extends AbstractRestController_IT {
      */
     @Test
     public void testFrontEndGeneratedUploadFailsDueToBoundaryFailureAgain() throws Exception {
-        MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<String, String>() {{
+        MediaType multipartType = new MediaType(MediaType.MULTIPART_FORM_DATA, new HashMap<>() {{
             put("boundary", "FormDataObject3c9");
         }});
         final String collectionName = "a7f43deb-3bb8-471a-a88c-e02a55082b9a";
