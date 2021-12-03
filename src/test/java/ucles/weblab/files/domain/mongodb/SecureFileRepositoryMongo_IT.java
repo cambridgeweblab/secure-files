@@ -2,9 +2,8 @@ package ucles.weblab.files.domain.mongodb;
 
 import com.google.common.io.Resources;
 import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
@@ -13,9 +12,9 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.gridfs.GridFsOperations;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,16 +38,12 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests that the secure file repository works.
@@ -57,7 +52,7 @@ import static org.junit.Assert.assertThat;
  */
 @ExtendWith(SpringExtension.class)
 @DataMongoTest
-@Transactional
+//@Transactional
 public class SecureFileRepositoryMongo_IT {
     private static final String FILE_RESOURCE_PATH = "81672667_bus.jpg";
 
@@ -71,8 +66,8 @@ public class SecureFileRepositoryMongo_IT {
         }
 
         @Bean
-        public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, MongoDatabaseFactory mongoDbFactory, EncryptionService encryptionService) {
-            return new SecureFileRepositoryMongo(mongoOperations, mongoDbFactory, encryptionService);
+        public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, GridFsOperations gridFsOperations, EncryptionService encryptionService) {
+            return new SecureFileRepositoryMongo(mongoOperations, gridFsOperations, encryptionService);
         }
 
         @Bean
@@ -132,10 +127,10 @@ public class SecureFileRepositoryMongo_IT {
         assertArrayEquals("Decrypted content should match", originalData, decryptedData);
 
         final Collection<SecureFileEntityMongo> allByBucket = secureFileRepository.findAllByCollection(bucket);
-        assertThat(allByBucket, contains(secureFile));
+        assertThat(allByBucket).contains(secureFile);
 
         secureFileRepository.delete(secureFile);
-        assertThat(secureFileRepository.findAllByCollection(bucket), not(contains(secureFile)));
+        assertThat(secureFileRepository.findAllByCollection(bucket)).doesNotContain(secureFile);
     }
 
     private SecureFileEntity newSecureFile(final byte[] originalData) {
