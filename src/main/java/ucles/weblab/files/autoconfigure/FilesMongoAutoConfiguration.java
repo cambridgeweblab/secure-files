@@ -9,8 +9,8 @@ import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfigurat
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.gridfs.GridFsOperations;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import ucles.weblab.files.domain.EncryptionService;
 import ucles.weblab.files.domain.FilesFactory;
@@ -40,7 +40,7 @@ public class FilesMongoAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SecureFileRepository.class)
-    public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, MongoDbFactory mongoDbFactory, EncryptionService encryptionService) {
-        return new SecureFileRepositoryMongo(mongoOperations, mongoDbFactory, encryptionService);
+    public SecureFileRepository secureFileRepositoryMongo(MongoOperations mongoOperations, GridFsOperations gridFsOperations, EncryptionService encryptionService) {
+        return new SecureFileRepositoryMongo(mongoOperations, gridFsOperations, encryptionService);
     }
 }

@@ -1,10 +1,11 @@
 package ucles.weblab.files.domain.mongodb;
 
-import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.client.gridfs.model.GridFSFile;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.dao.TransientDataAccessResourceException;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
 import ucles.weblab.files.domain.EncryptionService;
 import ucles.weblab.files.domain.SecureFileEntity;
 
@@ -24,12 +25,13 @@ import static ucles.weblab.common.domain.ConfigurableEntitySupport.configureBean
 @Configurable
 public class SecureFileEntityMongo implements SecureFileEntity {
     public static final String CIPHER_PROPERTY = "cipher";
+    public static final String FILE_KEY = "fileKey";
     public static final String NOTES_PROPERTY = "notes";
     public static final String FILENAME_PROPERTY = "filename";
     public static final String CONTENT_TYPE_PROPERTY = "contentType";
 
     private SecureFileCollectionEntityMongo bucket;
-    private GridFSDBFile dbFile;
+    private GridFsResource resource;
     private String filename;
     private String contentType;
     private String cipher;
@@ -54,21 +56,20 @@ public class SecureFileEntityMongo implements SecureFileEntity {
 
     /**
      * Creates a new entity object from an existing GridFSDBFile record.
-     * @param dbFile the MongoDB GridFS record
-     * @throws IOException
+     * @param resource the MongoDB GridFS record
      */
-    public SecureFileEntityMongo(SecureFileCollectionEntityMongo bucket, GridFSDBFile dbFile) {
+    public SecureFileEntityMongo(SecureFileCollectionEntityMongo bucket, GridFsResource resource) throws IOException {
         this();
         this.bucket = bucket;
-        this.dbFile = dbFile;
-        this.filename = dbFile.getFilename();
-        this.contentType = dbFile.getContentType();
-        this.length = dbFile.getLength();
-        this.fileKey = ((ObjectId) dbFile.getId()).toByteArray();
-        this.cipher = (String) dbFile.get(CIPHER_PROPERTY);
-        this.notes = (String) dbFile.get(NOTES_PROPERTY);
+        this.resource = resource;
+        this.filename = resource.getFilename();
+        this.contentType = resource.getContentType();
+        this.length = resource.contentLength();
+        this.fileKey = ((ObjectId) resource.getId()).toByteArray();
+        this.cipher = resource.getGridFSFile().getMetadata().getString(CIPHER_PROPERTY);
+        this.notes = resource.getGridFSFile().getMetadata().getString(NOTES_PROPERTY);
         this.encryptedData = new byte[(int) this.length];
-        try (DataInputStream dis = new DataInputStream(dbFile.getInputStream())) {
+        try (DataInputStream dis = new DataInputStream(resource.getInputStream())) {
             dis.readFully(this.encryptedData);
         } catch (IOException ex) {
             throw new TransientDataAccessResourceException("Could not obtain file data", ex);
@@ -121,8 +122,8 @@ public class SecureFileEntityMongo implements SecureFileEntity {
         return bucket;
     }
 
-    GridFSDBFile getDbFile() {
-        return dbFile;
+    GridFSFile getDbFile() {
+        return resource.getGridFSFile();
     }
 
     @Override
