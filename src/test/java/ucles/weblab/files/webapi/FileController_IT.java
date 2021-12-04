@@ -55,7 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SuppressWarnings("ConstantConditions")
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = FileController_IT.Config.class)
 //@WebIntegrationTest(value = "classpath:/public", randomPort = true)
 @Transactional
 public class FileController_IT extends AbstractRestControllerIT {
@@ -65,7 +65,6 @@ public class FileController_IT extends AbstractRestControllerIT {
     private static final String BASE64_RESOURCE_NAME_3 = "base64-post-error400.crlf.txt";
     private static final String IMAGE_RESOURCE_PATH = "beautiful_st_ives_cornwall_england_uk-1532356.jpg";
 
-    @Configuration
     @Import({ConfigurableEntitySupport.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, FilesConverters.class, FilesBuilders.class})
     @EnableAutoConfiguration(exclude = {FilesMongoAutoConfiguration.class, MongoAutoConfiguration.class, HypermediaAutoConfiguration.class})
     public static class Config {
